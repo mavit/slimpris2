@@ -36,6 +36,7 @@ import urllib #for quote and unquote
 import simplejson
 import urllib2
 import telnetlib
+import httplib
 
 import gettext
 gettext.bindtextdomain('slimpris2', '@datadir@/locale')
@@ -739,6 +740,8 @@ def format_metadata(data, context):
         for key in item:
             metadata[key] = item[key]
 
+    # Slimserver can return id as a negative integer, but DBus doesn't
+    # allow hyphens.  Need to encode/decode.
     if 'id' in metadata:
         metadata['mpris:trackid'] = dbus.ObjectPath("/org/mpris/MediaPlayer2/%s/%s" % (context, metadata['id']))
 
@@ -933,6 +936,9 @@ class JSONConnection(LMSConnection):
         except urllib2.HTTPError, error:
             contents = error.read()
             logging.error("Error, query: %s. %s", list(args), contents)
+            return
+        except httplib.BadStatusLine, error:
+            logging.error("Error, query: %s. Bad status line in response", list(args))
             return
         response_txt = response.read()
         result = simplejson.loads(response_txt)['result']
