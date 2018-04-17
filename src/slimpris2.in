@@ -206,14 +206,6 @@ MPRIS2_INTROSPECTION = \
 </node>"""
 
 
-# Default url handlers if MPD doesn't support 'urlhandlers' command
-urlhandlers = [ 'http://' ]
-downloaded_covers = [ '.covers/%s-%s.jpg' ]
-local_covers = [ 'cover.jpg', 'cover.png', 'album.jpg', 'front.jpg',
-    'folder.jpg', '.folder.jpg', '.folder.png', 'AlbumArt.jpg',
-    'AlbumArtSmall.jpg' ]
-
-
 # Wrapper to handle socket errors and similar
 class SBWrapper():
 
