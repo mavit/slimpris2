@@ -48,6 +48,7 @@ _ = gettext.gettext
 
 identity = "Squeezebox"
 params = {
+    'scheme': 'http',
     'host': 'localhost',
     'port': 9000,
     'mac': '00:00:00:00:00:01',
@@ -799,9 +800,9 @@ def format_metadata(data, context):
 class LMSConnection:
     def get_coverart_url(self, track_id, size=None):
         if size:
-            return "http://%s:%s/music/%s/cover_%sx%s_o" % (self.host, self.port, track_id, size, size)
+            return "%s://%s:%s/music/%s/cover_%sx%s_o" % (self.scheme, self.host, self.port, track_id, size, size)
         else:
-            return "http://%s:%s/music/%s/cover.jpg" % (self.host, self.port, track_id)
+            return "%s://%s:%s/music/%s/cover.jpg" % (self.scheme, self.host, self.port, track_id)
 
     def get_playing_info(self):
         #{'signalstrength': 0, 'mixer volume': 100, 'player_name': 'Studeerkamer', 'playlist mode': 'off', 'power': 1, 'playlist repeat': 0, 'player_ip': '192.168.1.58:49078', 'playlist_timestamp': 1338368677.0128, 'playlist_cur_index': '0', 'playlist shuffle': 0, 'rate': 1, 'seq_no': 0, 'mode': 'play', 'time': 161.490672870636, 'duration': 314.232, 'can_seek': 1, 'playlist_tracks': 12, 'player_connected': 1}
@@ -897,6 +898,7 @@ class JSONConnection(LMSConnection):
 
     def __init__(self, params):
         
+        self.scheme = params['scheme']
         self.host = params['host']
         self.port = params['port']
         self.username = None
@@ -905,7 +907,7 @@ class JSONConnection(LMSConnection):
             self.username = params['username']
         if 'password' in params:
             self.password = params['password']
-        self.server_url = "http://%s:%s/jsonrpc.js" % (self.host, self.port)
+        self.server_url = "%s://%s:%s/jsonrpc.js" % (self.scheme, self.host, self.port)
         self.player_id = params['mac']
 
         if self.username and self.password:
@@ -926,9 +928,9 @@ class JSONConnection(LMSConnection):
             login = "%s:%s@"%(self.username, self.password)
     
         if size:
-            return "http://%s%s:%s/music/%s/cover_%sx%s_o" % (login, self.host, self.port, track_id, size, size)
+            return "%s://%s%s:%s/music/%s/cover_%sx%s_o" % (self.scheme, login, self.host, self.port, track_id, size, size)
         else:
-            return "http://%s%s:%s/music/%s/cover.jpg" % (login, self.host, self.port, track_id)
+            return "%s://%s%s:%s/music/%s/cover.jpg" % (self.scheme, login, self.host, self.port, track_id)
 
     def query(self, player_id, *args):
         params = simplejson.dumps({'id':1, 'method':'slim.request', 'params':[player_id, list(args)]})
@@ -1044,6 +1046,8 @@ if __name__ == '__main__':
     config = six.moves.configparser.SafeConfigParser()
     config.read(['/etc/slimpris2.conf', os.path.expanduser('~/.config/slimpris2/slimpris2.conf')])
 
+    if config.has_option('Connection', 'scheme'):
+        params['scheme'] = config.get('Connection', 'scheme')
     if config.has_option('Connection', 'host'):
         params['host'] = config.get('Connection', 'host')
     if config.has_option('Connection', 'port'):
