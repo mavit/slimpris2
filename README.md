@@ -21,6 +21,6 @@ Logout/login from your session.  Default prefix is `/usr/local`.
 
 By default, `slimpris2` will try to connect to `localhost:9000`.
 
-To set a different host or port copy the example configuration file `/usr/[local]/share/doc/slimpris2/slimpris2.conf` to `~/.config/slimpris2/slimpris2.conf`.
+To set a different host or port, copy the example configuration file `/usr/[local]/share/doc/slimpris2/slimpris2.conf` to `~/.config/slimpris2/slimpris2.conf`.
 
 Restart your session or `slimpris2` after changing `slimpris2.conf`.
