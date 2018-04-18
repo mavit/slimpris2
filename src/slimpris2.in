@@ -1017,22 +1017,6 @@ if __name__ == '__main__':
     
     path = ""
     
-    config = six.moves.configparser.SafeConfigParser()
-    config.read(['/etc/slimpris2.conf', os.path.expanduser('~/.config/slimpris2/slimpris2.conf')])
-
-    if config.has_option('Connection', 'host'):
-        params['host'] = config.get('Connection', 'host')
-    if config.has_option('Connection', 'port'):
-        params['port'] = config.get('Connection', 'port')
-    if config.has_option('Connection', 'mac'):
-        params['mac'] = config.get('Connection', 'mac')
-    if config.has_option('Connection', 'username'):
-        params['username'] = config.get('Connection', 'username')
-    if config.has_option('Connection', 'password'):
-        params['password'] = config.get('Connection', 'password')
-    if config.has_option('Connection', 'music_dir'):
-        path = config.get('Connection', 'music_dir')
-
     try:
         (opts, args) = getopt.getopt(sys.argv[1:], 'hdp:', ['help', 'debug', 'path='])
     except getopt.GetoptError as xxx_todo_changeme:
@@ -1056,6 +1040,27 @@ if __name__ == '__main__':
 
     logging.basicConfig(format=log_format, level=log_level)
     logger = logging.getLogger('slimpris2')
+
+    config = six.moves.configparser.SafeConfigParser()
+    config.read(['/etc/slimpris2.conf', os.path.expanduser('~/.config/slimpris2/slimpris2.conf')])
+
+    if config.has_option('Connection', 'host'):
+        params['host'] = config.get('Connection', 'host')
+    if config.has_option('Connection', 'port'):
+        params['port'] = config.get('Connection', 'port')
+    if config.has_option('Connection', 'mac'):
+        params['mac'] = config.get('Connection', 'mac')
+    if config.has_option('Connection', 'username'):
+        params['username'] = config.get('Connection', 'username')
+    if config.has_option('Connection', 'password'):
+        params['password'] = config.get('Connection', 'password')
+    if config.has_option('Connection', 'music_dir'):
+        path = config.get('Connection', 'music_dir')
+
+    if config.has_option('Connection', 'username') and not config.has_option('Connection', 'password'):
+        logging.warn("A username, '%s', is set, but there is no corresponding password", params['username'])
+    elif config.has_option('Connection', 'password') and not config.has_option('Connection', 'username'):
+        logging.warn("A password is set, but there is no corresponding username")
 
     if len(args) == 3 and args[1].isdigit():
         params['host'] = args[0]
