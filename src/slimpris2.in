@@ -908,6 +908,17 @@ class JSONConnection(LMSConnection):
         self.server_url = "http://%s:%s/jsonrpc.js" % (self.host, self.port)
         self.player_id = params['mac']
 
+        if self.username and self.password:
+            auth_handler = urllib.request.HTTPBasicAuthHandler()
+            auth_handler.add_password(
+                realm='Logitech Media Server',
+                uri=("http://%s:%s/" % (self.host, self.port)),
+                user=self.username,
+                passwd=self.password
+            )
+            opener = urllib.request.build_opener(auth_handler)
+            urllib.request.install_opener(opener)
+
     def get_coverart_url(self, track_id, size=None):
     
         login = ""
@@ -921,11 +932,8 @@ class JSONConnection(LMSConnection):
 
     def query(self, player_id, *args):
         params = simplejson.dumps({'id':1, 'method':'slim.request', 'params':[player_id, list(args)]})
-        req = urllib.request.Request(self.server_url, params)
+        req = urllib.request.Request(self.server_url, params.encode('utf8'))
         
-        if self.username and self.password:
-            import base64
-            req.add_header('Authorization', b'Basic ' + base64.b64encode(self.username + b':' + self.password))
         try:
             response = urllib.request.urlopen(req)
         except urllib.error.HTTPError as error:
@@ -1070,7 +1078,7 @@ if __name__ == '__main__':
     for bling in ['mmkeys','notify']:
         if config.has_option('Bling', bling):
             params[bling] = config.getboolean('Bling', bling)
-    
+
     loop = GObject.MainLoop()
     signal.signal(signal.SIGINT, handle_sigint)
 
