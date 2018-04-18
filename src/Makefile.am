@@ -15,19 +15,9 @@ edit = sed -e 's|@bindir[@]|$(bindir)|g' \
 	   -e 's|@datadir[@]|$(datadir)|g' \
 	   -e 's|@PYTHON[@]|$(PYTHON)|g'
 
-slimpris2: Makefile
-	rm -f $@ $@.tmp
-	$(MKDIR_P) $(@D)
-	srcdir=''
-	test -f ./$@.in || srcdir=$(srcdir)/
-	$(edit) $${srcdir}$@.in > $@.tmp
-	mv $@.tmp $@
+slimpris2: slimpris2.in
+	$(edit) $< > $@
 	ln -sf $@ $@.py
 
-org.mpris.MediaPlayer2.squeezebox.service: Makefile
-	rm -f $@ $@.tmp
-	$(MKDIR_P) $(@D)
-	srcdir=''
-	test -f ./$@.in || srcdir=$(srcdir)/
-	$(edit) $${srcdir}$@.in > $@.tmp
-	mv $@.tmp $@
+org.mpris.MediaPlayer2.squeezebox.service: org.mpris.MediaPlayer2.squeezebox.service.in
+	$(edit) $< > $@
