@@ -12,7 +12,8 @@ EXTRA_DIST = org.mpris.MediaPlayer2.squeezebox.service.in slimpris2.in
 CLEANFILES = org.mpris.MediaPlayer2.squeezebox.service slimpris2.py slimpris2
 
 edit = sed -e 's|@bindir[@]|$(bindir)|g' \
-	   -e 's|@datadir[@]|$(datadir)|g'
+	   -e 's|@datadir[@]|$(datadir)|g' \
+	   -e 's|@PYTHON[@]|$(PYTHON)|g'
 
 slimpris2: Makefile
 	rm -f $@ $@.tmp
