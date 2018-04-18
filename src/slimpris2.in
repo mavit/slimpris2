@@ -27,7 +27,7 @@ import re
 import signal
 import socket
 import getopt
-import gobject
+from gi.repository import GObject
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
@@ -59,7 +59,7 @@ params = {
 }
 
 try:
-    import pynotify
+    from gi.repository import Notify
 except:
     params['notify'] = False
 
@@ -240,7 +240,7 @@ class SBWrapper():
         """ Try to connect to MPD """
         if self.my_connect():
             # If connection fail retry in 5 seconds
-            gobject.timeout_add(1000, self.my_connect)
+            GObject.timeout_add(1000, self.my_connect)
 
     def my_connect(self):
         """ Init MPD connection """
@@ -264,7 +264,7 @@ class SBWrapper():
             # Init internal state to throw events at start
             self.init_state()
             # Add periodic status check for sending MPRIS events
-            self._monitor = gobject.timeout_add(5000, self.monitor)
+            self._monitor = GObject.timeout_add(5000, self.monitor)
             # Reset error counter
             self._errors = 0
             # Return False to stop trying to connect
@@ -285,7 +285,7 @@ class SBWrapper():
         # Disconnect service from the session bus
         self._dbus_service.remove_from_connection();
         # Stop monitoring
-        gobject.source_remove(self._monitor)
+        GObject.source_remove(self._monitor)
         # Clean mpd client state
         #self.disconnect()
         # Try to reconnect
@@ -386,8 +386,8 @@ class Notify:
     def __init__(self, params):
         """ Init the notification system """
         if params['notify']:
-            if pynotify.init(identity):
-                self._notification = pynotify.Notification("", "", "")
+            if Notify.init(identity):
+                self._notification = Notify.Notification("", "", "")
             else:
                 logger.error('Failed to init libnotify; disabling' \
                     'notifications')
@@ -398,7 +398,7 @@ class Notify:
     def notify(self, title, body, uri = ''):
         """ Issue a new notification """
         if self._notification:
-            self._notification = pynotify.Notification(title, body, uri)
+            self._notification = Notify.Notification(title, body, uri)
             self._notification.show()
 
     def rnotify(self, title, body, uri = ''):
@@ -1071,7 +1071,7 @@ if __name__ == '__main__':
         if config.has_option('Bling', bling):
             params[bling] = config.getboolean('Bling', bling)
     
-    loop = gobject.MainLoop()
+    loop = GObject.MainLoop()
     signal.signal(signal.SIGINT, handle_sigint)
 
     # Used to communicate with LMS
