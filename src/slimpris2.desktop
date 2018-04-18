@@ -1,6 +1,5 @@
-
 [Desktop Entry]
-Name=Squeezebox
+Name=Squeezebox remote control
 Comment=MPRIS 2 support for Logitech Media Server
 Exec=slimpris2
 Icon=sound
@@ -9,4 +8,3 @@ Type=Application
 Categories=Audio;Music;Player;
 NoDisplay=true
 X-DBUS-ServiceName=org.mpris.MediaPlayer2.squeezebox
-
