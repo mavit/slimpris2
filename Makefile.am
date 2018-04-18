@@ -1,10 +1,11 @@
+AUTOMAKE_OPTIONS = foreign
 SUBDIRS = src po
-dist_doc_DATA = README COPYING AUTHORS
+dist_doc_DATA = README.md COPYING AUTHORS
 
 EXTRA_DIST = autogen.sh
 
-             
-dist-hook:                                                                      
+
+dist-hook:
 	rm -rf `find $(distdir) -name *~`
 
 sysconfdirwarning:
@@ -15,5 +16,7 @@ sysconfdirwarning:
 		echo '###'; \
 	fi
 
-.PHONY = sysconfdirwarning
+test:
+	$(MAKE) -C src $@
 
+.PHONY = sysconfdirwarning

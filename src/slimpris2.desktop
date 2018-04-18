@@ -5,6 +5,6 @@ Exec=slimpris2
 Icon=sound
 StartupNotify=false
 Type=Application
-Categories=Audio;Music;Player;
+Categories=AudioVideo;Audio;Music;Player
 NoDisplay=true
 X-DBUS-ServiceName=org.mpris.MediaPlayer2.squeezebox

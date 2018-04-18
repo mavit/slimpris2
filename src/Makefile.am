@@ -22,3 +22,8 @@ slimpris2: slimpris2.in
 
 org.mpris.MediaPlayer2.squeezebox.service: org.mpris.MediaPlayer2.squeezebox.service.in
 	$(edit) $< > $@
+
+test: test-desktop
+
+test-desktop: slimpris2.desktop
+	desktop-file-validate $<
