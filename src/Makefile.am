@@ -17,6 +17,7 @@ edit = sed -e 's|@bindir[@]|$(bindir)|g' \
 
 slimpris2: slimpris2.in
 	$(edit) $< > $@
+	chmod +x $@
 	ln -sf $@ $@.py
 
 org.mpris.MediaPlayer2.squeezebox.service: org.mpris.MediaPlayer2.squeezebox.service.in
