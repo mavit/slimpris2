@@ -13,13 +13,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author: terual (https://github.com/terual)
+# Authors: terual (https://github.com/terual), Peter Oliver <git@mavit.org.uk>
 # 
 # Heavily based on mpDris2 by Erik Karlsson <pilo@ayeon.org> and
 #  Jean-Philippe Braun <eon@patapon.info>
 # Some bits taken from quodlibet mpris plugin by <christoph.reiter@gmx.at>
-
-
 
 import os
 import sys
@@ -1012,7 +1010,7 @@ Default: LMS_HOST: %(host)s
          LMS_PORT: %(port)s
          PLAYER_MAC: %(mac)s
 
-Report bugs to https://github.com/terual/slimpris2/issues""" % params)
+Report bugs to https://github.com/mavit/slimpris2/issues""" % params)
 
 if __name__ == '__main__':
     DBusGMainLoop(set_as_default=True)

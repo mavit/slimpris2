@@ -1,0 +1,28 @@
+# `slimpris2`
+
+`slimpris2` provide [MPRIS 2](https://specifications.freedesktop.org/mpris-spec/latest/) remote control support for [Logitech Media Server](http://wiki.slimdevices.com/index.php/Logitech_Media_Server)
+, allowing it to be controlled using the user interface integrated into your Linux desktop.
+
+`slimpris2` is run in the user session and monitors a local or distant `squeezeboxserver`.
+
+## Installation
+
+```sh
+git clone https://github.com/mavit/slimpris2.git
+cd slimpris2
+./autogen.sh
+./configure --sysconfdir=/etc
+make
+sudo make install
+```
+
+Logout/login from your session.  Default prefix is `/usr/local`.
+
+## Configuration
+
+By default, `slimpris2` will try to connect to `localhost:9000`.
+
+To set a different host or port copy the example configuration file 
+`/usr/[local]/share/doc/slimpris2/slimpris2.conf` to `~/.config/slimpris2/slimpris2.conf`.
+
+Restart your session or `slimpris2` after changing `slimpris2.conf`.
