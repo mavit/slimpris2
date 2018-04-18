@@ -19,6 +19,8 @@
 #  Jean-Philippe Braun <eon@patapon.info>
 # Some bits taken from quodlibet mpris plugin by <christoph.reiter@gmx.at>
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import re
@@ -29,16 +31,17 @@ import gobject
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
-import ConfigParser
+import six.moves.configparser
 import logging
 
 import urllib #for quote and unquote
 import simplejson
 import urllib2
 import telnetlib
-import httplib
+import six.moves.http_client
 
 import gettext
+import six
 gettext.bindtextdomain('slimpris2', '@datadir@/locale')
 gettext.textdomain('slimpris2')
 _ = gettext.gettext
@@ -66,7 +69,7 @@ notification = None
 # MPRIS allowed metadata tags
 allowed_tags = {
     'mpris:trackid': dbus.ObjectPath,
-    'mpris:length': long,
+    'mpris:length': int,
     'mpris:artUrl': str,
     'xesam:album': str,
     'xesam:albumArtist': list,
@@ -293,7 +296,7 @@ class SBWrapper():
         self._status = lms.get_playing_info()
         # Invalid some fields to throw events at start
         self._status['mode'] = 'invalid'
-        if self._status.has_key('playlist_loop'):
+        if 'playlist_loop' in self._status:
             self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['title'] = 'invalid'
         self._status['playlist_cur_index'] = '-1'
         self._position = 0
@@ -311,7 +314,7 @@ class SBWrapper():
             else:
                 self._position = 0
 
-            if self._status['mode'] == 'play' and self._status.has_key('playlist_cur_index') and self._status.has_key('playlist_loop'):
+            if self._status['mode'] == 'play' and 'playlist_cur_index' in self._status and 'playlist_loop' in self._status:
                 if (old_status['playlist_cur_index'] != self._status['playlist_cur_index']) or \
                    (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['id'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['id']):
                     metadata = self._dbus_service.update_property('org.mpris.MediaPlayer2.Player', 'Metadata')
@@ -346,7 +349,7 @@ class SBWrapper():
             if old_status['playlist repeat'] != self._status['playlist repeat']:
                 self._dbus_service.update_property('org.mpris.MediaPlayer2.Player', 'LoopStatus')
                 
-            if old_status.has_key('playlist_loop') and self._status.has_key('playlist_loop'):
+            if 'playlist_loop' in old_status and 'playlist_loop' in self._status:
                 if len(old_status['playlist_loop'])+1 == len(self._status['playlist_loop']):
                     # Track added
                     pass
@@ -371,7 +374,7 @@ class SBWrapper():
                 notification.rnotify(identity, _('Playing'))
                 lms.play()
         elif key == 'Next':
-            lms.next()
+            next(lms)
         elif key == 'Previous':
             lms.prev()
         elif key == 'Stop':
@@ -538,7 +541,7 @@ class MPRISInterface(dbus.service.Object):
     def __get_tracklist():
         status = sb_wrapper._status
         tracklist = []
-        if status.has_key('playlist_loop'):
+        if 'playlist_loop' in status:
             for track in status['playlist_loop']:
                 tracklist.append(dbus.ObjectPath("/org/mpris/MediaPlayer2/TrackList/%s" % track['id']))
         return dbus.Array(tracklist, signature="o")
@@ -583,7 +586,7 @@ class MPRISInterface(dbus.service.Object):
     def GetAll(self, interface):
         read_props = {}
         props = self.__prop_mapping[interface]
-        for key, (getter, setter) in props.iteritems():
+        for key, (getter, setter) in six.iteritems(props):
             if callable(getter): getter = getter()
             read_props[key] = getter
         return read_props
@@ -610,7 +613,7 @@ class MPRISInterface(dbus.service.Object):
     # Player methods
     @dbus.service.method(__player_interface, in_signature='', out_signature='')
     def Next(self):
-        lms.next()
+        next(lms)
         return
 
     @dbus.service.method(__player_interface, in_signature='', out_signature='')
@@ -925,11 +928,11 @@ class JSONConnection(LMSConnection):
             req.add_header('Authorization', b'Basic ' + base64.b64encode(self.username + b':' + self.password))
         try:
             response = urllib2.urlopen(req)
-        except urllib2.HTTPError, error:
+        except urllib2.HTTPError as error:
             contents = error.read()
             logging.error("Error, query: %s. %s", list(args), contents)
             return
-        except httplib.BadStatusLine, error:
+        except six.moves.http_client.BadStatusLine as error:
             logging.error("Error, query: %s. Bad status line in response", list(args))
             return
         response_txt = response.read()
@@ -960,8 +963,8 @@ class CLIConnection(LMSConnection):
         response = self._telnet.read_until("\n")[:-1].decode('utf8')
         
         #logging.info("req: %s, response: %s", req, response)
-        print "REQ:", req
-        print "RES:", response
+        print("REQ:", req)
+        print("RES:", response)
         
         split = response.split(' ')
         result = {}
@@ -973,7 +976,7 @@ class CLIConnection(LMSConnection):
                 
             elif len(args) > n:
                 if args[n] == "?":
-                    print args[n], item
+                    print(args[n], item)
 
             elif ":" in item:
                 key, value = item.split(":", 1)
@@ -984,12 +987,12 @@ class CLIConnection(LMSConnection):
                         result[key] = float(value)
                 except:
                     result[key] = value
-        print result
+        print(result)
         return result
 
 
 def usage(params):
-    print """\
+    print("""\
 Usage: %(progname)s [OPTION]... [LMS_HOST] [LMS_PORT] [PLAYER_MAC]
 
      -p, --path=PATH        Sets the library path of LMS to PATH
@@ -999,14 +1002,14 @@ Default: LMS_HOST: %(host)s
          LMS_PORT: %(port)s
          PLAYER_MAC: %(mac)s
 
-Report bugs to https://github.com/terual/slimpris2/issues""" % params
+Report bugs to https://github.com/terual/slimpris2/issues""" % params)
 
 if __name__ == '__main__':
     DBusGMainLoop(set_as_default=True)
     
     path = ""
     
-    config = ConfigParser.SafeConfigParser()
+    config = six.moves.configparser.SafeConfigParser()
     config.read(['/etc/slimpris2.conf', os.path.expanduser('~/.config/slimpris2/slimpris2.conf')])
 
     if config.has_option('Connection', 'host'):
@@ -1024,9 +1027,10 @@ if __name__ == '__main__':
 
     try:
         (opts, args) = getopt.getopt(sys.argv[1:], 'hdp:', ['help', 'debug', 'path='])
-    except getopt.GetoptError, (msg, opt):
-        print sys.argv[0] + ': ' + msg
-        print
+    except getopt.GetoptError as xxx_todo_changeme:
+        (msg, opt) = xxx_todo_changeme.args
+        print(sys.argv[0] + ': ' + msg)
+        print()
         usage(params)
         sys.exit(2)
 
