@@ -19,8 +19,8 @@
 #  Jean-Philippe Braun <eon@patapon.info>
 # Some bits taken from quodlibet mpris plugin by <christoph.reiter@gmx.at>
 
-from __future__ import absolute_import
-from __future__ import print_function
+
+
 import os
 import sys
 import re
@@ -34,9 +34,9 @@ from dbus.mainloop.glib import DBusGMainLoop
 import six.moves.configparser
 import logging
 
-import urllib #for quote and unquote
+import urllib.request, urllib.parse, urllib.error #for quote and unquote
 import simplejson
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import telnetlib
 import six.moves.http_client
 
@@ -785,7 +785,7 @@ def format_metadata(data, context):
         del metadata[tag]
 
     # Cast metadata to the correct type, or discard it
-    for key, value in metadata.items():
+    for key, value in list(metadata.items()):
         try:
             metadata[key] = allowed_tags[key](value)
         except ValueError:
@@ -843,7 +843,7 @@ class LMSConnection:
     def stop(self):
         return self.query(self.player_id, "stop")
 
-    def next(self):
+    def __next__(self):
         return self.query(self.player_id, "playlist", "jump", "+1")
 
     def prev(self):
@@ -921,14 +921,14 @@ class JSONConnection(LMSConnection):
 
     def query(self, player_id, *args):
         params = simplejson.dumps({'id':1, 'method':'slim.request', 'params':[player_id, list(args)]})
-        req = urllib2.Request(self.server_url, params)
+        req = urllib.request.Request(self.server_url, params)
         
         if self.username and self.password:
             import base64
             req.add_header('Authorization', b'Basic ' + base64.b64encode(self.username + b':' + self.password))
         try:
-            response = urllib2.urlopen(req)
-        except urllib2.HTTPError as error:
+            response = urllib.request.urlopen(req)
+        except urllib.error.HTTPError as error:
             contents = error.read()
             logging.error("Error, query: %s. %s", list(args), contents)
             return
@@ -969,7 +969,7 @@ class CLIConnection(LMSConnection):
         split = response.split(' ')
         result = {}
         for n, item in enumerate(split):
-            item = urllib.unquote(item)
+            item = urllib.parse.unquote(item)
             
             if re.match("[0-9a-f]{2}([-:][0-9a-f]{2}){5}$", item.lower()):
                 result['player_id'] = item
