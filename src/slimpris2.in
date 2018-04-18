@@ -771,7 +771,7 @@ def format_metadata(data, context):
 
     if 'coverart' in metadata and 'coverid' in metadata:
         if int(metadata['coverart']) == 1:
-            metadata['mpris:artUrl'] = lms.get_coverart_url(metadata['coverid'], 80)
+            metadata['mpris:artUrl'] = lms.get_coverart_url(metadata['coverid'])
 
     # Stream: populate some missings tags with stream's name
     if 'name' in metadata:
