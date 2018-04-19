@@ -35,6 +35,7 @@ import logging
 import urllib.request, urllib.parse, urllib.error #for quote and unquote
 import simplejson
 import urllib.request, urllib.error, urllib.parse
+import ssl
 import telnetlib
 import six.moves.http_client
 
@@ -55,6 +56,7 @@ params = {
     'music_dir': '',
     'mmkeys': True,
     'notify': True,
+    'insecure_https': False,
 }
 
 try:
@@ -907,17 +909,27 @@ class JSONConnection(LMSConnection):
             self.password = params['password']
         self.server_url = "%s://%s:%s/jsonrpc.js" % (self.scheme, self.host, self.port)
         self.player_id = params['mac']
+        if 'insecure_https' in params:
+            self.insecure_https = params['insecure_https']
+
+        handlers = []
+
+        if self.scheme == 'https' and self.insecure_https:
+            context = ssl._create_unverified_context()
+            handlers.append(urllib.request.HTTPSHandler(context=context))
 
         if self.username and self.password:
             auth_handler = urllib.request.HTTPBasicAuthHandler()
             auth_handler.add_password(
                 realm='Logitech Media Server',
-                uri=("http://%s:%s/" % (self.host, self.port)),
+                uri=("%s://%s:%s/" % (self.scheme, self.host, self.port)),
                 user=self.username,
                 passwd=self.password
             )
-            opener = urllib.request.build_opener(auth_handler)
-            urllib.request.install_opener(opener)
+            handlers.append(auth_handler)
+
+        opener = urllib.request.build_opener(*handlers)
+        urllib.request.install_opener(opener)
 
     def get_coverart_url(self, track_id, size=None):
     
@@ -933,7 +945,7 @@ class JSONConnection(LMSConnection):
     def query(self, player_id, *args):
         params = simplejson.dumps({'id':1, 'method':'slim.request', 'params':[player_id, list(args)]})
         req = urllib.request.Request(self.server_url, params.encode('utf8'))
-        
+
         try:
             response = urllib.request.urlopen(req)
         except urllib.error.HTTPError as error:
@@ -1058,6 +1070,9 @@ if __name__ == '__main__':
         params['password'] = config.get('Connection', 'password')
     if config.has_option('Connection', 'music_dir'):
         path = config.get('Connection', 'music_dir')
+    if config.has_option('Connection', 'insecure_https'):
+        params['insecure_https'] = config.getboolean('Connection',
+                                                     'insecure_https')
 
     if config.has_option('Connection', 'username') and not config.has_option('Connection', 'password'):
         logging.warn("A username, '%s', is set, but there is no corresponding password", params['username'])
