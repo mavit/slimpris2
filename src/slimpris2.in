@@ -236,13 +236,13 @@ class SBWrapper():
                 params['mmkeys'] = False
 
     def run(self):
-        """ Try to connect to MPD """
+        """ Try to connect to LMS """
         if self.my_connect():
             # If connection fail retry in 5 seconds
             GObject.timeout_add(1000, self.my_connect)
 
     def my_connect(self):
-        """ Init MPD connection """
+        """ Init LMS connection """
         try:
             # Connect to host
             #self.sc = Server(hostname=HOSTNAME, port=CLIPORT)
@@ -271,7 +271,7 @@ class SBWrapper():
         except socket.error as e:
             self._errors += 1
             if self._errors < 6:
-                logger.error('Could not connect to MPD: %s' % e)
+                logger.error('Could not connect to LMS: %s' % e)
             if self._errors == 6:
                 logger.info('Continue to connect but going silent')
             return True
@@ -762,8 +762,8 @@ def format_metadata(data, context):
     if 'composer' in metadata:
         metadata['xesam:composer'] = [metadata['composer'],]
 
-    mpd_tags = ('album', 'title')
-    for tag in mpd_tags:
+    lms_tags = ('album', 'title')
+    for tag in lms_tags:
         if tag in metadata:
             metadata['xesam:%s' % tag] = metadata[tag]
 
@@ -1095,7 +1095,7 @@ if __name__ == '__main__':
     # Wrapper to send notifications
     notification = Notify(params)
 
-    # Create wrapper to handle connection failures with MPD more gracefully
+    # Create wrapper to handle connection failures with LMS more gracefully
     sb_wrapper = SBWrapper(params)
     sb_wrapper.run()
 
