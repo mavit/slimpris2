@@ -246,13 +246,8 @@ class SBWrapper():
     def my_connect(self):
         """ Init LMS connection """
         try:
-            # Connect to host
-            #self.sc = Server(hostname=HOSTNAME, port=CLIPORT)
-            #self.sc.connect()
-            
-            # Make the socket non blocking to detect deconnections
-            #self.sc.telnet.get_socket().settimeout(5.0)
-            
+            lms.get_playing_info()
+
             # Export our DBUS service
             if not self._dbus_service:
                 self._dbus_service = MPRISInterface()
@@ -270,7 +265,7 @@ class SBWrapper():
             self._errors = 0
             # Return False to stop trying to connect
             return False
-        except socket.error as e:
+        except six.moves.http_client.BadStatusLine as e:
             self._errors += 1
             if self._errors < 6:
                 logger.error('Could not connect to LMS: %s' % e)
@@ -807,7 +802,7 @@ class LMSConnection:
     def get_playing_info(self):
         #{'signalstrength': 0, 'mixer volume': 100, 'player_name': 'Studeerkamer', 'playlist mode': 'off', 'power': 1, 'playlist repeat': 0, 'player_ip': '192.168.1.58:49078', 'playlist_timestamp': 1338368677.0128, 'playlist_cur_index': '0', 'playlist shuffle': 0, 'rate': 1, 'seq_no': 0, 'mode': 'play', 'time': 161.490672870636, 'duration': 314.232, 'can_seek': 1, 'playlist_tracks': 12, 'player_connected': 1}
         info = self.query(self.player_id, "status", "0", None, "tags:")
-        return info
+        return info or {"mode": "invalid"}
     
     def metadata(self, track_id):
         #path = self.get_track_path()
@@ -951,9 +946,6 @@ class JSONConnection(LMSConnection):
         except urllib.error.HTTPError as error:
             contents = error.read()
             logging.error("Error, query: %s. %s", list(args), contents)
-            return
-        except six.moves.http_client.BadStatusLine as error:
-            logging.error("Error, query: %s. Bad status line in response", list(args))
             return
         response_txt = response.read()
         result = simplejson.loads(response_txt)['result']
