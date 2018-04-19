@@ -547,8 +547,12 @@ class MPRISInterface(dbus.service.Object):
         tracklist = []
         if 'playlist_loop' in status:
             for track in status['playlist_loop']:
-                tracklist.append(dbus.ObjectPath(
-                    "/org/mpris/MediaPlayer2/TrackList/%s" % track['id']))
+                tracklist.append(
+                    dbus.ObjectPath(
+                        "/org/mpris/MediaPlayer2/TrackList/%s"
+                        % dbus_encode_id(track['id'])
+                    )
+                )
         return dbus.Array(tracklist, signature="o")
 
     __tracklist_interface = "org.mpris.MediaPlayer2.TrackList"
@@ -675,7 +679,10 @@ class MPRISInterface(dbus.service.Object):
     @dbus.service.method(__player_interface, in_signature='ox', out_signature='')
     def SetPosition(self, trackid, position):
         song = sb_wrapper._status  # lms.get_playing_info()
-        if trackid != dbus.ObjectPath('/org/mpris/MediaPlayer2/Track/%s' % song['id']):
+        if trackid != dbus.ObjectPath(
+                '/org/mpris/MediaPlayer2/Track/%s'
+                % dbus_encode_id(song['id'])
+        ):
             return
         # Convert position to seconds
         position = float(position) / 1000000
@@ -700,8 +707,8 @@ class MPRISInterface(dbus.service.Object):
     def GetTracksMetadata(self, track_ids):
         metadata = []
         for track_id in track_ids:
-            track_id = int(str(track_id).replace(
-                '/org/mpris/MediaPlayer2/TrackList/', ''))
+            track_id = int(dbus_decode_id(str(track_id).replace(
+                '/org/mpris/MediaPlayer2/TrackList/', '')))
             metadata.append(format_metadata(
                 lms.metadata(track_id), "TrackList"))
         return dbus.Array(metadata, signature="a{sv}")
@@ -712,8 +719,8 @@ class MPRISInterface(dbus.service.Object):
 
     @dbus.service.method(__tracklist_interface, in_signature='o', out_signature='')
     def RemoveTrack(self, track_id):
-        track_id = int(str(track_id).replace(
-            '/org/mpris/MediaPlayer2/TrackList/', ''))
+        track_id = int(dbus_decode_id(str(track_id).replace(
+            '/org/mpris/MediaPlayer2/TrackList/', '')))
         for track in sb_wrapper._status['playlist_loop']:
             if int(track['id']) == track_id:
                 lms.playlist_remove(int(track['playlist index']))
@@ -721,8 +728,8 @@ class MPRISInterface(dbus.service.Object):
 
     @dbus.service.method(__tracklist_interface, in_signature='o', out_signature='')
     def GoTo(self, track_id):
-        track_id = int(str(track_id).replace(
-            '/org/mpris/MediaPlayer2/TrackList/', ''))
+        track_id = int(dbus_decode_id(str(track_id).replace(
+            '/org/mpris/MediaPlayer2/TrackList/', '')))
         for track in sb_wrapper._status['playlist_loop']:
             if int(track['id']) == track_id:
                 lms.playlist_goto(int(track['playlist index']))
@@ -741,6 +748,14 @@ def handle_sigint(signum, frame):
     loop.quit()
 
 
+def dbus_encode_id(track_id):
+    return track_id.replace('-', '_')
+
+
+def dbus_decode_id(string):
+    return string.replace('_', '-')
+
+
 def format_metadata(data, context):
     """http://xmms2.org/wiki/MPRIS_Metadata"""
 
@@ -750,11 +765,11 @@ def format_metadata(data, context):
         for key in item:
             metadata[key] = item[key]
 
-    # Slimserver can return id as a negative integer, but DBus doesn't
-    # allow hyphens.  Need to encode/decode.
     if 'id' in metadata:
         metadata['mpris:trackid'] = dbus.ObjectPath(
-            "/org/mpris/MediaPlayer2/%s/%s" % (context, metadata['id']))
+            "/org/mpris/MediaPlayer2/%s/%s" %
+            (context, dbus_encode_id(metadata['id']))
+        )
 
     if 'duration' in metadata:
         metadata['mpris:length'] = int(float(metadata['duration']) * 1000000)
