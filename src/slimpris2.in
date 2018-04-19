@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Authors: terual (https://github.com/terual), Peter Oliver <git@mavit.org.uk>
-# 
+#
 # Heavily based on mpDris2 by Erik Karlsson <pilo@ayeon.org> and
 #  Jean-Philippe Braun <eon@patapon.info>
 # Some bits taken from quodlibet mpris plugin by <christoph.reiter@gmx.at>
@@ -32,9 +32,10 @@ from dbus.mainloop.glib import DBusGMainLoop
 import six.moves.configparser
 import logging
 
-import urllib.request, urllib.parse, urllib.error #for quote and unquote
 import simplejson
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 import ssl
 import telnetlib
 import six.moves.http_client
@@ -94,7 +95,7 @@ allowed_tags = {
 
 # python dbus bindings don't include annotations and properties
 MPRIS2_INTROSPECTION = \
-"""<node name="/org/mpris/MediaPlayer2">
+    """<node name="/org/mpris/MediaPlayer2">
   <interface name="org.freedesktop.DBus.Introspectable">
     <method name="Introspect">
       <arg direction="out" name="xml_data" type="s"/>
@@ -226,15 +227,16 @@ class SBWrapper():
         if self._params['mmkeys']:
             try:
                 gsd_object = dbus.SessionBus().get_object('org.gnome.SettingsDaemon',
-                    '/org/gnome/SettingsDaemon/MediaKeys')
+                                                          '/org/gnome/SettingsDaemon/MediaKeys')
                 # this is what gives us the multi media keys.
                 gsd_object.GrabMediaPlayerKeys('Squeezebox', 0,
-                    dbus_interface='org.gnome.SettingsDaemon.MediaKeys')
+                                               dbus_interface='org.gnome.SettingsDaemon.MediaKeys')
                 # connect_to_signal registers our callback function.
-                gsd_object.connect_to_signal('MediaPlayerKeyPressed', self.on_mediakey)
+                gsd_object.connect_to_signal(
+                    'MediaPlayerKeyPressed', self.on_mediakey)
             except:
-                logger.error('Failed to connect to GNOME Settings Daemon.' \
-                    ' Disabling multimedia key support')
+                logger.error('Failed to connect to GNOME Settings Daemon.'
+                             ' Disabling multimedia key support')
                 params['mmkeys'] = False
 
     def run(self):
@@ -254,9 +256,9 @@ class SBWrapper():
             else:
                 # Add our service to the session bus
                 self._dbus_service.add_to_connection(dbus.SessionBus(),
-                    '/org/mpris/MediaPlayer2')
+                                                     '/org/mpris/MediaPlayer2')
                 self._dbus_service.aquire_name()
-            
+
             # Init internal state to throw events at start
             self.init_state()
             # Add periodic status check for sending MPRIS events
@@ -277,13 +279,13 @@ class SBWrapper():
         logger.warning("Disconnected")
         notification.rnotify(identity, _('Disconnected'), 'error')
         # Release the Dbus name
-        self._dbus_service.release_name();
+        self._dbus_service.release_name()
         # Disconnect service from the session bus
-        self._dbus_service.remove_from_connection();
+        self._dbus_service.remove_from_connection()
         # Stop monitoring
         GObject.source_remove(self._monitor)
         # Clean mpd client state
-        #self.disconnect()
+        # self.disconnect()
         # Try to reconnect
         self.run()
 
@@ -293,7 +295,8 @@ class SBWrapper():
         # Invalid some fields to throw events at start
         self._status['mode'] = 'invalid'
         if 'playlist_loop' in self._status:
-            self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['title'] = 'invalid'
+            self._status['playlist_loop'][int(self._status['playlist_cur_index'])][
+                'title'] = 'invalid'
         self._status['playlist_cur_index'] = '-1'
         self._position = 0
 
@@ -313,7 +316,8 @@ class SBWrapper():
             if self._status['mode'] == 'play' and 'playlist_cur_index' in self._status and 'playlist_loop' in self._status:
                 if (old_status['playlist_cur_index'] != self._status['playlist_cur_index']) or \
                    (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['id'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['id']):
-                    metadata = self._dbus_service.update_property('org.mpris.MediaPlayer2.Player', 'Metadata')
+                    metadata = self._dbus_service.update_property(
+                        'org.mpris.MediaPlayer2.Player', 'Metadata')
                     if self._params['notify']:
                         uri = 'sound'
                         if 'mpris:artUrl' in metadata:
@@ -327,34 +331,38 @@ class SBWrapper():
                         notification.notify(title, _('by %s') % artist, uri)
 
             if self._status['mode'] != 'stop' and old_status['mode'] != 'stop':
-                if (abs(self._position - old_position) > 2 and \
-                   old_status['playlist_cur_index'] == self._status['playlist_cur_index']) or \
+                if (abs(self._position - old_position) > 2 and
+                    old_status['playlist_cur_index'] == self._status['playlist_cur_index']) or \
                    old_status['playlist_cur_index'] == '-1':
                     self._dbus_service.Seeked(self._position * 1000000)
 
-
             if old_status['mixer volume'] != self._status['mixer volume']:
-                self._dbus_service.update_property('org.mpris.MediaPlayer2.Player', 'Volume')
+                self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2.Player', 'Volume')
 
             if old_status['mode'] != self._status['mode']:
-                self._dbus_service.update_property('org.mpris.MediaPlayer2.Player', 'PlaybackStatus')
+                self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2.Player', 'PlaybackStatus')
 
             if old_status['playlist shuffle'] != self._status['playlist shuffle']:
-                self._dbus_service.update_property('org.mpris.MediaPlayer2.Player', 'Shuffle')
+                self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2.Player', 'Shuffle')
 
             if old_status['playlist repeat'] != self._status['playlist repeat']:
-                self._dbus_service.update_property('org.mpris.MediaPlayer2.Player', 'LoopStatus')
-                
+                self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2.Player', 'LoopStatus')
+
             if 'playlist_loop' in old_status and 'playlist_loop' in self._status:
-                if len(old_status['playlist_loop'])+1 == len(self._status['playlist_loop']):
+                if len(old_status['playlist_loop']) + 1 == len(self._status['playlist_loop']):
                     # Track added
                     pass
-                elif len(old_status['playlist_loop']) == len(self._status['playlist_loop'])+1:
+                elif len(old_status['playlist_loop']) == len(self._status['playlist_loop']) + 1:
                     # Track removed
                     pass
                 elif old_status['playlist_loop'] != self._status['playlist_loop']:
                     # New TrackList
-                    self._dbus_service.update_property('org.mpris.MediaPlayer2.TrackList', 'Tracks')
+                    self._dbus_service.update_property(
+                        'org.mpris.MediaPlayer2.TrackList', 'Tracks')
 
         # Return True to continue polling
         return True
@@ -379,30 +387,30 @@ class SBWrapper():
 
 
 class Notify:
+
     def __init__(self, params):
         """ Init the notification system """
         if params['notify']:
             if Notify.init(identity):
                 self._notification = Notify.Notification("", "", "")
             else:
-                logger.error('Failed to init libnotify; disabling' \
-                    'notifications')
+                logger.error('Failed to init libnotify; disabling'
+                             'notifications')
                 self._notification = False
         else:
             self._notification = False
 
-    def notify(self, title, body, uri = ''):
+    def notify(self, title, body, uri=''):
         """ Issue a new notification """
         if self._notification:
             self._notification = Notify.Notification(title, body, uri)
             self._notification.show()
 
-    def rnotify(self, title, body, uri = ''):
+    def rnotify(self, title, body, uri=''):
         """ Replace current notification """
         if self._notification:
             self._notification.update(title, body, uri)
             self._notification.show()
-
 
 
 class MPRISInterface(dbus.service.Object):
@@ -415,12 +423,12 @@ class MPRISInterface(dbus.service.Object):
 
     def __init__(self):
         dbus.service.Object.__init__(self, dbus.SessionBus(),
-            MPRISInterface.__path)
+                                     MPRISInterface.__path)
         self.aquire_name()
 
     def aquire_name(self):
         self._bus_name = dbus.service.BusName(MPRISInterface.__name,
-            bus=dbus.SessionBus())
+                                              bus=dbus.SessionBus())
 
     def release_name(self):
         del self._bus_name
@@ -454,20 +462,20 @@ class MPRISInterface(dbus.service.Object):
         return
 
     def __get_loop_status():
-        #if lms.get_repeat() == '0':
+        # if lms.get_repeat() == '0':
         if sb_wrapper._status['playlist repeat'] == '2':
             return "Playlist"
         elif sb_wrapper._status['playlist repeat'] == '1':
             return "Track"
         else:
             return "None"
-            
+
     def __set_shuffle(value):
         # TODO
         return
 
     def __get_shuffle():
-        #if lms.get_shuffle() == '0':
+        # if lms.get_shuffle() == '0':
         if sb_wrapper._status['playlist shuffle'] == '0':
             return False
         else:
@@ -502,19 +510,19 @@ class MPRISInterface(dbus.service.Object):
         return dbus.Int64(int(position * 1000000))
 
     def __can_next():
-        status = sb_wrapper._status #lms.get_playing_info()
+        status = sb_wrapper._status  # lms.get_playing_info()
         if 'playlist_cur_index' in status and 'playlist_tracks' in status:
             if int(status['playlist_cur_index']) < int(status['playlist_tracks']):
                 return True
         return False
 
     def __can_seek():
-        status = sb_wrapper._status #lms.get_playing_info()
+        status = sb_wrapper._status  # lms.get_playing_info()
         if 'can_seek' in status:
             if status['can_seek'] == 1:
                 return True
         return False
-        
+
     __player_interface = "org.mpris.MediaPlayer2.Player"
     __player_props = {
         "PlaybackStatus": (__get_playback_status, None),
@@ -539,7 +547,8 @@ class MPRISInterface(dbus.service.Object):
         tracklist = []
         if 'playlist_loop' in status:
             for track in status['playlist_loop']:
-                tracklist.append(dbus.ObjectPath("/org/mpris/MediaPlayer2/TrackList/%s" % track['id']))
+                tracklist.append(dbus.ObjectPath(
+                    "/org/mpris/MediaPlayer2/TrackList/%s" % track['id']))
         return dbus.Array(tracklist, signature="o")
 
     __tracklist_interface = "org.mpris.MediaPlayer2.TrackList"
@@ -559,7 +568,7 @@ class MPRISInterface(dbus.service.Object):
 
     @dbus.service.signal(__prop_interface, signature="sa{sv}as")
     def PropertiesChanged(self, interface, changed_properties,
-        invalidated_properties):
+                          invalidated_properties):
         pass
 
     @dbus.service.method(__prop_interface,
@@ -583,7 +592,8 @@ class MPRISInterface(dbus.service.Object):
         read_props = {}
         props = self.__prop_mapping[interface]
         for key, (getter, setter) in six.iteritems(props):
-            if callable(getter): getter = getter()
+            if callable(getter):
+                getter = getter()
             read_props[key] = getter
         return read_props
 
@@ -650,21 +660,23 @@ class MPRISInterface(dbus.service.Object):
 
     @dbus.service.method(__player_interface, in_signature='x', out_signature='')
     def Seek(self, offset):
-        status = sb_wrapper._status #lms.get_playing_info()
+        status = sb_wrapper._status  # lms.get_playing_info()
         current = float(status['time'])
         end = float(status['duration'])
         offset = float(offset) / 1000000
         if current + offset <= end:
             position = current + offset
-            if position < 0: position = 0
+            if position < 0:
+                position = 0
             lms.set_position(position)
             self.Seeked(position * 1000000)
         return
 
     @dbus.service.method(__player_interface, in_signature='ox', out_signature='')
     def SetPosition(self, trackid, position):
-        song = sb_wrapper._status #lms.get_playing_info()
-        if trackid != dbus.ObjectPath('/org/mpris/MediaPlayer2/Track/%s' % song['id']): return
+        song = sb_wrapper._status  # lms.get_playing_info()
+        if trackid != dbus.ObjectPath('/org/mpris/MediaPlayer2/Track/%s' % song['id']):
+            return
         # Convert position to seconds
         position = float(position) / 1000000
         logger.debug("SetPosition: %i, %i" % (position, int(song['time'])))
@@ -688,8 +700,10 @@ class MPRISInterface(dbus.service.Object):
     def GetTracksMetadata(self, track_ids):
         metadata = []
         for track_id in track_ids:
-            track_id = int(str(track_id).replace('/org/mpris/MediaPlayer2/TrackList/', ''))
-            metadata.append(format_metadata(lms.metadata(track_id), "TrackList"))
+            track_id = int(str(track_id).replace(
+                '/org/mpris/MediaPlayer2/TrackList/', ''))
+            metadata.append(format_metadata(
+                lms.metadata(track_id), "TrackList"))
         return dbus.Array(metadata, signature="a{sv}")
 
     @dbus.service.method(__tracklist_interface, in_signature='sob', out_signature='')
@@ -698,7 +712,8 @@ class MPRISInterface(dbus.service.Object):
 
     @dbus.service.method(__tracklist_interface, in_signature='o', out_signature='')
     def RemoveTrack(self, track_id):
-        track_id = int(str(track_id).replace('/org/mpris/MediaPlayer2/TrackList/', ''))
+        track_id = int(str(track_id).replace(
+            '/org/mpris/MediaPlayer2/TrackList/', ''))
         for track in sb_wrapper._status['playlist_loop']:
             if int(track['id']) == track_id:
                 lms.playlist_remove(int(track['playlist index']))
@@ -706,7 +721,8 @@ class MPRISInterface(dbus.service.Object):
 
     @dbus.service.method(__tracklist_interface, in_signature='o', out_signature='')
     def GoTo(self, track_id):
-        track_id = int(str(track_id).replace('/org/mpris/MediaPlayer2/TrackList/', ''))
+        track_id = int(str(track_id).replace(
+            '/org/mpris/MediaPlayer2/TrackList/', ''))
         for track in sb_wrapper._status['playlist_loop']:
             if int(track['id']) == track_id:
                 lms.playlist_goto(int(track['playlist index']))
@@ -718,15 +734,18 @@ class MPRISInterface(dbus.service.Object):
         return tracklist
 
 # Handle signals more gracefully
+
+
 def handle_sigint(signum, frame):
     logger.debug('Caught SIGINT, exiting.')
     loop.quit()
 
+
 def format_metadata(data, context):
     """http://xmms2.org/wiki/MPRIS_Metadata"""
-    
+
     metadata = {}
-    
+
     for item in data:
         for key in item:
             metadata[key] = item[key]
@@ -734,7 +753,8 @@ def format_metadata(data, context):
     # Slimserver can return id as a negative integer, but DBus doesn't
     # allow hyphens.  Need to encode/decode.
     if 'id' in metadata:
-        metadata['mpris:trackid'] = dbus.ObjectPath("/org/mpris/MediaPlayer2/%s/%s" % (context, metadata['id']))
+        metadata['mpris:trackid'] = dbus.ObjectPath(
+            "/org/mpris/MediaPlayer2/%s/%s" % (context, metadata['id']))
 
     if 'duration' in metadata:
         metadata['mpris:length'] = int(float(metadata['duration']) * 1000000)
@@ -747,17 +767,17 @@ def format_metadata(data, context):
         metadata['xesam:trackNumber'] = metadata['tracknum']
 
     if 'genre' in metadata:
-        metadata['xesam:genre'] = [metadata['genre'],]
+        metadata['xesam:genre'] = [metadata['genre'], ]
 
     if 'disc' in metadata:
         metadata['xesam:discNumber'] = int(re.match('^([0-9]+).*',
-            metadata['disc']).group(1))
+                                                    metadata['disc']).group(1))
 
     if 'artist' in metadata:
-        metadata['xesam:artist'] = [metadata['artist'],]
+        metadata['xesam:artist'] = [metadata['artist'], ]
 
     if 'composer' in metadata:
-        metadata['xesam:composer'] = [metadata['composer'],]
+        metadata['xesam:composer'] = [metadata['composer'], ]
 
     lms_tags = ('album', 'title')
     for tag in lms_tags:
@@ -766,7 +786,8 @@ def format_metadata(data, context):
 
     if 'coverart' in metadata and 'coverid' in metadata:
         if int(metadata['coverart']) == 1:
-            metadata['mpris:artUrl'] = lms.get_coverart_url(metadata['coverid'])
+            metadata['mpris:artUrl'] = lms.get_coverart_url(metadata[
+                                                            'coverid'])
 
     # Stream: populate some missings tags with stream's name
     if 'name' in metadata:
@@ -786,13 +807,14 @@ def format_metadata(data, context):
             metadata[key] = allowed_tags[key](value)
         except ValueError:
             del metadata[key]
-            logger.error("Can't cast value %s to %s" % \
-                (value, allowed_tags[key]))
+            logger.error("Can't cast value %s to %s" %
+                         (value, allowed_tags[key]))
 
     return dbus.Dictionary(metadata, signature='sv')
 
 
 class LMSConnection:
+
     def get_coverart_url(self, track_id, size=None):
         if size:
             return "%s://%s:%s/music/%s/cover_%sx%s_o" % (self.scheme, self.host, self.port, track_id, size, size)
@@ -803,10 +825,11 @@ class LMSConnection:
         #{'signalstrength': 0, 'mixer volume': 100, 'player_name': 'Studeerkamer', 'playlist mode': 'off', 'power': 1, 'playlist repeat': 0, 'player_ip': '192.168.1.58:49078', 'playlist_timestamp': 1338368677.0128, 'playlist_cur_index': '0', 'playlist shuffle': 0, 'rate': 1, 'seq_no': 0, 'mode': 'play', 'time': 161.490672870636, 'duration': 314.232, 'can_seek': 1, 'playlist_tracks': 12, 'player_connected': 1}
         info = self.query(self.player_id, "status", "0", None, "tags:")
         return info or {"mode": "invalid"}
-    
+
     def metadata(self, track_id):
         #path = self.get_track_path()
-        songinfo = self.query(self.player_id, "songinfo", "0", None, "track_id:%s" % track_id )
+        songinfo = self.query(self.player_id, "songinfo",
+                              "0", None, "track_id:%s" % track_id)
         return songinfo['songinfo_loop']
 
     def get_track_path(self):
@@ -817,7 +840,7 @@ class LMSConnection:
 
     def get_track_title(self):
         return self.query(self.player_id, "title", "?")['_title']
-    
+
     def get_track_artist(self):
         return self.query(self.player_id, "artist", "?")['_artist']
 
@@ -826,16 +849,16 @@ class LMSConnection:
 
     def get_track_duration(self):
         return self.query(self.player_id, "duration", "?")['_duration']
-        
+
     def get_mode(self):
         return self.query(self.player_id, "mode", "?")['_mode']
-        
+
     def play(self):
         return self.query(self.player_id, "play")
 
     def pause(self):
         return self.query(self.player_id, "pause")
-        
+
     def stop(self):
         return self.query(self.player_id, "stop")
 
@@ -851,48 +874,48 @@ class LMSConnection:
 
     def set_volume(self, volume):
         # Set volume (0-100)
-        return self.query(self.player_id, "mixer", "volume", volume) 
+        return self.query(self.player_id, "mixer", "volume", volume)
 
     def get_position(self):
         return float(self.query(self.player_id, "time", "?")['_time'])
-    
+
     def set_position(self, pos):
         # set in seconds
         return self.query(self.player_id, "time", pos)
-        
+
     def seek(self, pos):
-        if pos>=0:
+        if pos >= 0:
             return self.query(self.player_id, "time", "+%d" % pos)
         else:
             return self.query(self.player_id, "time", "-%d" % pos)
-               
+
     def set_repeat(self, num):
-        # 0 no repeat, 1 repeat song, 2 repeat playlist. 
+        # 0 no repeat, 1 repeat song, 2 repeat playlist.
         return self.query(self.player_id, "playlist", "repeat", num)
 
     def get_repeat(self):
-        # 0 no repeat, 1 repeat song, 2 repeat playlist. 
+        # 0 no repeat, 1 repeat song, 2 repeat playlist.
         return self.query(self.player_id, "playlist", "repeat", "?")['_repeat']
-        
+
     def get_shuffle(self):
-        # 0 no shuffle, 1 shuffle songs, 2 shuffle albums. 
+        # 0 no shuffle, 1 shuffle songs, 2 shuffle albums.
         return self.query(self.player_id, "playlist", "shuffle", "?")['_shuffle']
 
     def set_shuffle(self, num):
-        # 0 no shuffle, 1 shuffle songs, 2 shuffle albums. 
+        # 0 no shuffle, 1 shuffle songs, 2 shuffle albums.
         return self.query(self.player_id, "playlist", "shuffle", num)
-        
+
     def playlist_goto(self, playlist_index):
         return self.query(self.player_id, "playlist", "index", playlist_index)
 
     def playlist_remove(self, playlist_index):
-        return self.query(self.player_id, "playlist", "delete", playlist_index) 
+        return self.query(self.player_id, "playlist", "delete", playlist_index)
 
 
 class JSONConnection(LMSConnection):
 
     def __init__(self, params):
-        
+
         self.scheme = params['scheme']
         self.host = params['host']
         self.port = params['port']
@@ -902,7 +925,8 @@ class JSONConnection(LMSConnection):
             self.username = params['username']
         if 'password' in params:
             self.password = params['password']
-        self.server_url = "%s://%s:%s/jsonrpc.js" % (self.scheme, self.host, self.port)
+        self.server_url = "%s://%s:%s/jsonrpc.js" % (
+            self.scheme, self.host, self.port)
         self.player_id = params['mac']
         if 'insecure_https' in params:
             self.insecure_https = params['insecure_https']
@@ -927,18 +951,19 @@ class JSONConnection(LMSConnection):
         urllib.request.install_opener(opener)
 
     def get_coverart_url(self, track_id, size=None):
-    
+
         login = ""
         if self.username and self.password:
-            login = "%s:%s@"%(self.username, self.password)
-    
+            login = "%s:%s@" % (self.username, self.password)
+
         if size:
             return "%s://%s%s:%s/music/%s/cover_%sx%s_o" % (self.scheme, login, self.host, self.port, track_id, size, size)
         else:
             return "%s://%s%s:%s/music/%s/cover.jpg" % (self.scheme, login, self.host, self.port, track_id)
 
     def query(self, player_id, *args):
-        params = simplejson.dumps({'id':1, 'method':'slim.request', 'params':[player_id, list(args)]})
+        params = simplejson.dumps(
+            {'id': 1, 'method': 'slim.request', 'params': [player_id, list(args)]})
         req = urllib.request.Request(self.server_url, params.encode('utf8'))
 
         try:
@@ -952,10 +977,11 @@ class JSONConnection(LMSConnection):
         logging.debug("query: %s, result: %s", list(args), result)
         return result
 
+
 class CLIConnection(LMSConnection):
-    
+
     def __init__(self, params):
-        
+
         self.host = params['host']
         self.port = 9090
         self.player_id = params['mac']
@@ -966,26 +992,26 @@ class CLIConnection(LMSConnection):
         self.logged_in = (result == "******")
 
     def query(self, player_id, *args):
-        
+
         req = player_id.encode('utf8') + ' '
         for arg in args:
             if arg:
                 req += arg.encode('utf8') + ' '
         self._telnet.write(req + "\n")
         response = self._telnet.read_until("\n")[:-1].decode('utf8')
-        
+
         #logging.info("req: %s, response: %s", req, response)
         print("REQ:", req)
         print("RES:", response)
-        
+
         split = response.split(' ')
         result = {}
         for n, item in enumerate(split):
             item = urllib.parse.unquote(item)
-            
+
             if re.match("[0-9a-f]{2}([-:][0-9a-f]{2}){5}$", item.lower()):
                 result['player_id'] = item
-                
+
             elif len(args) > n:
                 if args[n] == "?":
                     print(args[n], item)
@@ -993,7 +1019,7 @@ class CLIConnection(LMSConnection):
             elif ":" in item:
                 key, value = item.split(":", 1)
                 try:
-                    if float(value)-int(value) == 0:
+                    if float(value) - int(value) == 0:
                         result[key] = int(value)
                     else:
                         result[key] = float(value)
@@ -1018,11 +1044,12 @@ Report bugs to https://github.com/mavit/slimpris2/issues""" % params)
 
 if __name__ == '__main__':
     DBusGMainLoop(set_as_default=True)
-    
+
     path = ""
-    
+
     try:
-        (opts, args) = getopt.getopt(sys.argv[1:], 'hdp:', ['help', 'debug', 'path='])
+        (opts, args) = getopt.getopt(sys.argv[
+            1:], 'hdp:', ['help', 'debug', 'path='])
     except getopt.GetoptError as xxx_todo_changeme:
         (msg, opt) = xxx_todo_changeme.args
         print(sys.argv[0] + ': ' + msg)
@@ -1046,7 +1073,8 @@ if __name__ == '__main__':
     logger = logging.getLogger('slimpris2')
 
     config = six.moves.configparser.SafeConfigParser()
-    config.read(['/etc/slimpris2.conf', os.path.expanduser('~/.config/slimpris2/slimpris2.conf')])
+    config.read(['/etc/slimpris2.conf',
+                 os.path.expanduser('~/.config/slimpris2/slimpris2.conf')])
 
     if config.has_option('Connection', 'scheme'):
         params['scheme'] = config.get('Connection', 'scheme')
@@ -1067,9 +1095,11 @@ if __name__ == '__main__':
                                                      'insecure_https')
 
     if config.has_option('Connection', 'username') and not config.has_option('Connection', 'password'):
-        logging.warn("A username, '%s', is set, but there is no corresponding password", params['username'])
+        logging.warn(
+            "A username, '%s', is set, but there is no corresponding password", params['username'])
     elif config.has_option('Connection', 'password') and not config.has_option('Connection', 'username'):
-        logging.warn("A password is set, but there is no corresponding username")
+        logging.warn(
+            "A password is set, but there is no corresponding username")
 
     if len(args) == 3 and args[1].isdigit():
         params['host'] = args[0]
@@ -1086,10 +1116,10 @@ if __name__ == '__main__':
         if not path.startswith('file://'):
             params['music_dir'] = 'file://' + path
     else:
-        logger.warning('By not supplying a path for the music library ' \
-            'this program will break the MPRIS specification!')
+        logger.warning('By not supplying a path for the music library '
+                       'this program will break the MPRIS specification!')
 
-    for bling in ['mmkeys','notify']:
+    for bling in ['mmkeys', 'notify']:
         if config.has_option('Bling', bling):
             params[bling] = config.getboolean('Bling', bling)
 
@@ -1108,4 +1138,3 @@ if __name__ == '__main__':
 
     # Run idle loop
     loop.run()
-
