@@ -707,8 +707,8 @@ class MPRISInterface(dbus.service.Object):
     def GetTracksMetadata(self, track_ids):
         metadata = []
         for track_id in track_ids:
-            track_id = int(dbus_decode_id(str(track_id).replace(
-                '/org/mpris/MediaPlayer2/TrackList/', '')))
+            track_id = dbus_decode_id(str(track_id).replace(
+                '/org/mpris/MediaPlayer2/TrackList/', ''))
             metadata.append(format_metadata(
                 lms.metadata(track_id), "TrackList"))
         return dbus.Array(metadata, signature="a{sv}")
@@ -719,8 +719,8 @@ class MPRISInterface(dbus.service.Object):
 
     @dbus.service.method(__tracklist_interface, in_signature='o', out_signature='')
     def RemoveTrack(self, track_id):
-        track_id = int(dbus_decode_id(str(track_id).replace(
-            '/org/mpris/MediaPlayer2/TrackList/', '')))
+        track_id = dbus_decode_id(str(track_id).replace(
+            '/org/mpris/MediaPlayer2/TrackList/', ''))
         for track in sb_wrapper._status['playlist_loop']:
             if int(track['id']) == track_id:
                 lms.playlist_remove(int(track['playlist index']))
@@ -728,8 +728,8 @@ class MPRISInterface(dbus.service.Object):
 
     @dbus.service.method(__tracklist_interface, in_signature='o', out_signature='')
     def GoTo(self, track_id):
-        track_id = int(dbus_decode_id(str(track_id).replace(
-            '/org/mpris/MediaPlayer2/TrackList/', '')))
+        track_id = dbus_decode_id(str(track_id).replace(
+            '/org/mpris/MediaPlayer2/TrackList/', ''))
         for track in sb_wrapper._status['playlist_loop']:
             if int(track['id']) == track_id:
                 lms.playlist_goto(int(track['playlist index']))
@@ -749,11 +749,11 @@ def handle_sigint(signum, frame):
 
 
 def dbus_encode_id(track_id):
-    return track_id.replace('-', '_')
+    return str(track_id).replace('-', '_')
 
 
 def dbus_decode_id(string):
-    return string.replace('_', '-')
+    return int(string.replace('_', '-'))
 
 
 def format_metadata(data, context):
