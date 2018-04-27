@@ -267,7 +267,10 @@ class SBWrapper():
             self._errors = 0
             # Return False to stop trying to connect
             return False
-        except six.moves.http_client.BadStatusLine as e:
+        except (
+                six.moves.http_client.BadStatusLine,
+                urllib.error.URLError
+        ) as e:
             self._errors += 1
             if self._errors < 6:
                 logger.error('Could not connect to LMS: %s' % e)
@@ -984,8 +987,7 @@ class JSONConnection(LMSConnection):
         try:
             response = urllib.request.urlopen(req)
         except urllib.error.HTTPError as error:
-            contents = error.read()
-            logging.error("Error, query: %s. %s", list(args), contents)
+            logging.error("%s. Query was %s", error.reason, list(args))
             return
         response_txt = response.read()
         result = simplejson.loads(response_txt)['result']
