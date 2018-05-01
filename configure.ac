@@ -1,7 +1,7 @@
 AC_INIT(slimpris2, 0.1)
 AM_INIT_AUTOMAKE(slimpris2, 0.1, [https://github.com/mavit/slimpris2])
 AM_PATH_PYTHON([3.6])
-GETTEXT_PACKAGE=slimppris2
+GETTEXT_PACKAGE=slimpris2
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE",
     [The prefix for our gettext translation domains.])
