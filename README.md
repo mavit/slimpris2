@@ -6,6 +6,15 @@
 
 ## Installation
 
+### Fedora
+
+```sh
+dnf copr enable mavit/slimpris2
+dnf install slimpris2
+```
+
+### From source
+
 ```sh
 git clone https://github.com/mavit/slimpris2.git
 cd slimpris2
