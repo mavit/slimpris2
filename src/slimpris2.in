@@ -71,7 +71,7 @@ notification = None
 # MPRIS allowed metadata tags
 allowed_tags = {
     'mpris:trackid': dbus.ObjectPath,
-    'mpris:length': int,
+    'mpris:length': dbus.Int64,
     'mpris:artUrl': str,
     'xesam:album': str,
     'xesam:albumArtist': list,
@@ -712,8 +712,9 @@ class MPRISInterface(dbus.service.Object):
         for track_id in track_ids:
             track_id = dbus_decode_id(str(track_id).replace(
                 '/org/mpris/MediaPlayer2/TrackList/', ''))
-            metadata.append(format_metadata(
-                lms.metadata(track_id), "TrackList"))
+            metadata.append(
+                format_metadata(lms.metadata(track_id), "TrackList")
+            )
         return dbus.Array(metadata, signature="a{sv}")
 
     @dbus.service.method(__tracklist_interface, in_signature='sob', out_signature='')
@@ -775,7 +776,7 @@ def format_metadata(data, context):
         )
 
     if 'duration' in metadata:
-        metadata['mpris:length'] = int(float(metadata['duration']) * 1000000)
+        metadata['mpris:length'] = float(metadata['duration']) * 1000000
 
     if 'year' in metadata:
         if not int(metadata['year']) == 0:
