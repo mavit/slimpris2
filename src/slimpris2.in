@@ -312,7 +312,7 @@ class SBWrapper():
         if type(self._status) == type(dict()):
 
             if 'time' in self._status:
-                self._position = int(self._status['time'])
+                self._position = float(self._status['time'])
             else:
                 self._position = 0
 
@@ -698,7 +698,7 @@ class MPRISInterface(dbus.service.Object):
     @dbus.service.signal(__player_interface, signature='x')
     def Seeked(self, position):
         logger.debug("Seeked to %i" % position)
-        return float(position)
+        return dbus.Int64(position)
 
     @dbus.service.method(__player_interface, in_signature='', out_signature='')
     def OpenUri(self):
