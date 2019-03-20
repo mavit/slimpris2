@@ -1089,7 +1089,7 @@ if __name__ == '__main__':
     logging.basicConfig(format=log_format, level=log_level)
     logger = logging.getLogger('slimpris2')
 
-    config = six.moves.configparser.SafeConfigParser()
+    config = six.moves.configparser.ConfigParser()
     config.read(['/etc/slimpris2.conf',
                  os.path.expanduser('~/.config/slimpris2/slimpris2.conf')])
 
