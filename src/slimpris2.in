@@ -1128,6 +1128,8 @@ if __name__ == '__main__':
         usage(params)
         sys.exit()
 
+    params['mac'] = params['mac'].replace('-', ':')
+
     if path and os.path.exists(path):
         logger.info('Using %s as music library path' % path)
         if not path.startswith('file://'):
