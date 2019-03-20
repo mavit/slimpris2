@@ -1133,6 +1133,11 @@ if __name__ == '__main__':
         if not path.startswith('file://'):
             params['music_dir'] = 'file://' + path
     else:
+        try:
+            if path:
+                os.stat(path)
+        except OSError as e:
+            logger.warning('Music library path: %s' % e)
         logger.warning('By not supplying a path for the music library '
                        'this program will break the MPRIS specification!')
 
