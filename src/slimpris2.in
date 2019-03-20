@@ -25,7 +25,7 @@ import re
 import signal
 import socket
 import getopt
-from gi.repository import GObject
+from gi.repository import GLib
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
@@ -243,7 +243,7 @@ class SBWrapper():
         """ Try to connect to LMS """
         if self.my_connect():
             # If connection fail retry in 5 seconds
-            GObject.timeout_add(1000, self.my_connect)
+            GLib.timeout_add(1000, self.my_connect)
 
     def my_connect(self):
         """ Init LMS connection """
@@ -262,7 +262,7 @@ class SBWrapper():
             # Init internal state to throw events at start
             self.init_state()
             # Add periodic status check for sending MPRIS events
-            self._monitor = GObject.timeout_add(5000, self.monitor)
+            self._monitor = GLib.timeout_add(5000, self.monitor)
             # Reset error counter
             self._errors = 0
             # Return False to stop trying to connect
@@ -286,7 +286,7 @@ class SBWrapper():
         # Disconnect service from the session bus
         self._dbus_service.remove_from_connection()
         # Stop monitoring
-        GObject.source_remove(self._monitor)
+        GLib.source_remove(self._monitor)
         # Clean mpd client state
         # self.disconnect()
         # Try to reconnect
@@ -1147,7 +1147,7 @@ if __name__ == '__main__':
         if config.has_option('Bling', bling):
             params[bling] = config.getboolean('Bling', bling)
 
-    loop = GObject.MainLoop()
+    loop = GLib.MainLoop()
     signal.signal(signal.SIGINT, handle_sigint)
 
     # Used to communicate with LMS
