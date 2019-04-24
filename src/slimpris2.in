@@ -864,7 +864,9 @@ class LMSConnection:
             )
 
     def get_absolute_url(self, relative_url):
-        if relative_url[0] == '/':
+        if urllib.parse.urlparse(relative_url).scheme == '':
+            if relative_url[0] != '/':
+                relative_url = '/' + relative_url
             return "%s://%s:%s%s" % (
                 self.scheme, self.host, self.port, relative_url
             )
