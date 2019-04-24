@@ -1,5 +1,5 @@
-AC_INIT(slimpris2, 0.3.1)
-AM_INIT_AUTOMAKE(slimpris2, 0.3.1, [https://github.com/mavit/slimpris2])
+AC_INIT(slimpris2, 0.3.2)
+AM_INIT_AUTOMAKE(slimpris2, 0.3.2, [https://github.com/mavit/slimpris2])
 AM_PATH_PYTHON([3.6])
 GETTEXT_PACKAGE=slimpris2
 AC_SUBST(GETTEXT_PACKAGE)
