@@ -31,6 +31,8 @@ import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 import six.moves.configparser
 import logging
+import datetime
+import locale
 
 import simplejson
 import urllib.request
@@ -785,28 +787,45 @@ def format_metadata(data, context):
     if 'tracknum' in metadata:
         metadata['xesam:trackNumber'] = metadata['tracknum']
 
-    if 'genre' in metadata:
-        metadata['xesam:genre'] = [metadata['genre'], ]
-
     if 'disc' in metadata:
         metadata['xesam:discNumber'] = int(re.match('^([0-9]+).*',
                                                     metadata['disc']).group(1))
 
-    if 'artist' in metadata:
-        metadata['xesam:artist'] = [metadata['artist'], ]
+    if 'playcount' in metadata:
+        metadata['xesam:useCount'] = metadata['playcount']
 
-    if 'composer' in metadata:
-        metadata['xesam:composer'] = [metadata['composer'], ]
+    if 'bpm' in metadata:
+        metadata['xesam:audioBPM'] = metadata['bpm']
 
-    lms_tags = ('album', 'title')
-    for tag in lms_tags:
+    if 'lyrics' in metadata:
+        metadata['xesam:asText'] = metadata['lyrics']
+
+    if 'addedTime' in metadata:
+        saved_locale = locale.setlocale(locale.LC_TIME)
+        try:
+            locale.setlocale(locale.LC_TIME, 'C')
+            metadata['xesam:firstUsed'] = datetime.datetime.strptime(
+                metadata['addedTime'],
+                '%A, %d %B %Y, %H:%M'
+            ).isoformat()
+        except ValueError as e:
+            logger.warning('Could not parse addedTime: %s' % e)
+        finally:
+            locale.setlocale(locale.LC_TIME, saved_locale)
+
+    for tag in ('album', 'title', 'url'):
         if tag in metadata:
             metadata['xesam:%s' % tag] = metadata[tag]
 
-    if 'coverart' in metadata and 'coverid' in metadata:
+    for tag in ('artist', 'comment', 'composer', 'genre'):
+        if tag in metadata:
+            metadata['xesam:%s' % tag] = [metadata[tag]]
+
+    if 'artwork_url' in metadata:
+        metadata['mpris:artUrl'] = lms.get_absolute_url(metadata['artwork_url'])
+    elif 'coverart' in metadata and 'coverid' in metadata:
         if int(metadata['coverart']) == 1:
-            metadata['mpris:artUrl'] = lms.get_coverart_url(metadata[
-                                                            'coverid'])
+            metadata['mpris:artUrl'] = lms.get_coverart_url(metadata['coverid'])
 
     # Stream: populate some missings tags with stream's name
     if 'name' in metadata:
@@ -836,9 +855,21 @@ class LMSConnection:
 
     def get_coverart_url(self, track_id, size=None):
         if size:
-            return "%s://%s:%s/music/%s/cover_%sx%s_o" % (self.scheme, self.host, self.port, track_id, size, size)
+            return self.get_absolute_url(
+                "/music/%s/cover_%sx%s_o" % (track_id, size, size)
+            )
         else:
-            return "%s://%s:%s/music/%s/cover.jpg" % (self.scheme, self.host, self.port, track_id)
+            return self.get_absolute_url(
+                "/music/%s/cover.jpg" % (track_id)
+            )
+
+    def get_absolute_url(self, relative_url):
+        if relative_url[0] == '/':
+            return "%s://%s:%s%s" % (
+                self.scheme, self.host, self.port, relative_url
+            )
+        else:
+            return relative_url
 
     def get_playing_info(self):
         #{'signalstrength': 0, 'mixer volume': 100, 'player_name': 'Studeerkamer', 'playlist mode': 'off', 'power': 1, 'playlist repeat': 0, 'player_ip': '192.168.1.58:49078', 'playlist_timestamp': 1338368677.0128, 'playlist_cur_index': '0', 'playlist shuffle': 0, 'rate': 1, 'seq_no': 0, 'mode': 'play', 'time': 161.490672870636, 'duration': 314.232, 'can_seek': 1, 'playlist_tracks': 12, 'player_connected': 1}
@@ -847,8 +878,12 @@ class LMSConnection:
 
     def metadata(self, track_id):
         #path = self.get_track_path()
-        songinfo = self.query(self.player_id, "songinfo",
-                              "0", None, "track_id:%s" % track_id)
+        songinfo = self.query(
+            self.player_id, "songinfo", "0", None,
+            "tags:acdDgijkKlmOtuwy",
+            "track_id:%s" % track_id
+        )
+
         return songinfo['songinfo_loop']
 
     def get_track_path(self):
