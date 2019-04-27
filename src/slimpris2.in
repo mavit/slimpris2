@@ -822,7 +822,10 @@ def format_metadata(data, context):
             metadata['xesam:%s' % tag] = [metadata[tag]]
 
     if 'artwork_url' in metadata:
-        metadata['mpris:artUrl'] = lms.get_absolute_url(metadata['artwork_url'])
+        # Work around for https://gitlab.gnome.org/GNOME/gvfs/issues/54
+        artwork_url = re.sub(r'(?i)%2f', '/', metadata['artwork_url'])
+
+        metadata['mpris:artUrl'] = lms.get_absolute_url(artwork_url)
     elif 'coverart' in metadata and 'coverid' in metadata:
         if int(metadata['coverart']) == 1:
             metadata['mpris:artUrl'] = lms.get_coverart_url(metadata['coverid'])
