@@ -326,9 +326,10 @@ class SBWrapper():
                 self._position = 0
 
             if self._status['mode'] == 'play' and 'playlist_cur_index' in self._status and 'playlist_loop' in self._status:
-                if (old_status['playlist_cur_index'] != self._status['playlist_cur_index']) or \
-                   (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['id'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['id']) or \
-                   (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['title'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['title']):
+                if 'playlist_cur_index' not in old_status \
+                   or (old_status['playlist_cur_index'] != self._status['playlist_cur_index']) \
+                   or (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['id'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['id']) \
+                   or (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['title'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['title']):
                     metadata = self._dbus_service.update_property(
                         'org.mpris.MediaPlayer2.Player', 'Metadata')
                     if self._params['notify']:
