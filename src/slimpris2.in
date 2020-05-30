@@ -270,7 +270,7 @@ class SBWrapper():
             # Add periodic status check for sending MPRIS events
             self._monitor = GLib.timeout_add_seconds(
                 self._params['poll_period'],
-                self.monitor
+                self.monitor_until_exception
             )
             # Reset error counter
             self._errors = 0
@@ -378,6 +378,14 @@ class SBWrapper():
                         'org.mpris.MediaPlayer2.TrackList', 'Tracks')
 
         # Return True to continue polling
+        return True
+
+    def monitor_until_exception(self):
+        try:
+            self.monitor()
+        except Exception:
+            logger.critical('Uncaught exception', exc_info=True)
+            loop.quit()
         return True
 
     def on_mediakey(self, appname, key):
