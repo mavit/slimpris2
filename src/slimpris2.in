@@ -60,6 +60,7 @@ params = {
     'mmkeys': True,
     'notify': True,
     'insecure_https': False,
+    'poll_period': 5,
 }
 
 try:
@@ -244,8 +245,11 @@ class SBWrapper():
     def run(self):
         """ Try to connect to LMS """
         if self.my_connect():
-            # If connection fail retry in 5 seconds
-            GLib.timeout_add(1000, self.my_connect)
+            # If connection fails, retry periodically.
+            GLib.timeout_add_seconds(
+                self._params['poll_period'],
+                self.my_connect
+            )
 
     def my_connect(self):
         """ Init LMS connection """
@@ -264,7 +268,10 @@ class SBWrapper():
             # Init internal state to throw events at start
             self.init_state()
             # Add periodic status check for sending MPRIS events
-            self._monitor = GLib.timeout_add(5000, self.monitor)
+            self._monitor = GLib.timeout_add_seconds(
+                self._params['poll_period'],
+                self.monitor
+            )
             # Reset error counter
             self._errors = 0
             # Return False to stop trying to connect
