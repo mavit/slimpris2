@@ -128,8 +128,10 @@ MPRIS2_INTROSPECTION = \
   <interface name="org.mpris.MediaPlayer2">
     <method name="Raise"/>
     <method name="Quit"/>
-    <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
     <property name="CanQuit" type="b" access="read"/>
+    <property name="Fullscreen" type="b" access="read"/>
+    <property name="CanSetFullscreen" type="b" access="read"/>
     <property name="CanRaise" type="b" access="read"/>
     <property name="HasTrackList" type="b" access="read"/>
     <property name="Identity" type="s" access="read"/>
@@ -461,7 +463,7 @@ class MPRISInterface(dbus.service.Object):
         "CanRaise": (False, None),
         "Fullscreen": (False, None),
         "CanSetFullscreen": (False, None),
-        "DesktopEntry": ("Squeezebox", None),
+        "DesktopEntry": ("slimpris2", None),
         "HasTrackList": (True, None),
         "Identity": (identity, None),
         "SupportedUriSchemes": (dbus.Array(signature="s"), None),
