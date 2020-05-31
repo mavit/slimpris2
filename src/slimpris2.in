@@ -309,10 +309,12 @@ class SBWrapper():
         # Invalid some fields to throw events at start
         self._status['mode'] = 'invalid'
         if 'playlist_loop' in self._status:
-            self._status['playlist_loop'][int(self._status['playlist_cur_index'])][
-                'title'] = 'invalid'
+            self._status['playlist_loop'][
+                int(self._status['playlist_cur_index'])
+            ]['title'] = 'invalid'
         self._status['playlist_cur_index'] = '-1'
         self._position = 0
+        self.monitor()
 
     def monitor(self):
         old_status = self._status
@@ -472,7 +474,11 @@ class MPRISInterface(dbus.service.Object):
 
     def __get_playback_status():
         status = sb_wrapper._status
-        return {'play': 'Playing', 'pause': 'Paused', 'stop': 'Stopped'}[status['mode']]
+        return {
+            'play': 'Playing',
+            'pause': 'Paused',
+            'stop': 'Stopped',
+        }[status['mode']]
 
     def __set_loop_status(value):
         if str(value) == "Playlist":
