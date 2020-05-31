@@ -166,7 +166,7 @@ MPRIS2_INTROSPECTION = \
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
     </property>
     <property name="Rate" type="d" access="readwrite">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
     </property>
     <property name="Shuffle" type="b" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
@@ -181,10 +181,10 @@ MPRIS2_INTROSPECTION = \
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
     <property name="MinimumRate" type="d" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
     </property>
     <property name="MaximumRate" type="d" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
     </property>
     <property name="CanGoNext" type="b" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
@@ -196,13 +196,13 @@ MPRIS2_INTROSPECTION = \
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
     </property>
     <property name="CanPause" type="b" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
     </property>
     <property name="CanSeek" type="b" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
     </property>
     <property name="CanControl" type="b" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
     </property>
   </interface>
   <interface name="org.mpris.MediaPlayer2.TrackList">
@@ -329,24 +329,46 @@ class SBWrapper():
             else:
                 self._position = 0
 
-            if self._status['mode'] == 'play' and 'playlist_cur_index' in self._status and 'playlist_loop' in self._status:
-                if 'playlist_cur_index' not in old_status \
-                   or (old_status['playlist_cur_index'] != self._status['playlist_cur_index']) \
-                   or (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['id'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['id']) \
-                   or (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['title'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['title']):
-                    metadata = self._dbus_service.update_property(
-                        'org.mpris.MediaPlayer2.Player', 'Metadata')
-                    if self._params['notify']:
-                        uri = 'sound'
-                        if 'mpris:artUrl' in metadata:
-                            uri = metadata['mpris:artUrl']
-                        title = 'Unknown Title'
-                        if 'xesam:title' in metadata:
-                            title = metadata['xesam:title']
-                        artist = 'Unknown Artist'
-                        if 'xesam:artist' in metadata:
-                            artist = metadata['xesam:artist'][0]
-                        notification.notify(title, _('by %s') % artist, uri)
+            if (
+                self._status['mode'] == 'play'
+                and 'playlist_cur_index' in self._status
+                and 'playlist_loop' in self._status
+                and (
+                    'playlist_cur_index' not in old_status
+                    or (old_status['playlist_cur_index'] != self._status['playlist_cur_index'])
+                    or (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['id'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['id'])
+                    or (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['title'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['title'])
+                 )
+            ):
+                metadata = self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2.Player',
+                    'Metadata'
+                )
+                self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2.Player',
+                    'CanSeek'
+                )
+                if self._params['notify']:
+                    uri = 'sound'
+                    if 'mpris:artUrl' in metadata:
+                        uri = metadata['mpris:artUrl']
+                    title = 'Unknown Title'
+                    if 'xesam:title' in metadata:
+                        title = metadata['xesam:title']
+                    artist = 'Unknown Artist'
+                    if 'xesam:artist' in metadata:
+                        artist = metadata['xesam:artist'][0]
+                    notification.notify(title, _('by %s') % artist, uri)
+            elif 'playlist_loop' in old_status \
+                 and 'playlist_loop' not in self._status:
+                metadata = self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2.Player',
+                    'Metadata'
+                )
+                self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2.Player',
+                    'CanSeek'
+                )
 
             if self._status['mode'] != 'stop' and old_status['mode'] != 'stop':
                 if (abs(self._position - old_position) > 2 and
@@ -370,17 +392,32 @@ class SBWrapper():
                 self._dbus_service.update_property(
                     'org.mpris.MediaPlayer2.Player', 'LoopStatus')
 
-            if 'playlist_loop' in old_status and 'playlist_loop' in self._status:
-                if len(old_status['playlist_loop']) + 1 == len(self._status['playlist_loop']):
-                    # Track added
-                    pass
-                elif len(old_status['playlist_loop']) == len(self._status['playlist_loop']) + 1:
-                    # Track removed
-                    pass
-                elif old_status['playlist_loop'] != self._status['playlist_loop']:
-                    # New TrackList
+            if (
+                bool('playlist_loop' in old_status)
+                    != bool('playlist_loop' in self._status)
+            ) or (
+                'playlist_loop' in old_status
+                and 'playlist_loop' in self._status
+                and old_status['playlist_loop'] != self._status['playlist_loop']
+            ):
+                self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2.TrackList',
+                    'Tracks'
+                )
+                for prop in ['CanGoNext', 'CanGoPrevious', 'CanPlay']:
                     self._dbus_service.update_property(
-                        'org.mpris.MediaPlayer2.TrackList', 'Tracks')
+                        'org.mpris.MediaPlayer2.Player',
+                        prop
+                    )
+            elif (
+                'playlist_cur_index' in old_status
+                and 'playlist_cur_index' in self._status
+            ):
+                for prop in ['CanGoNext', 'CanGoPrevious']:
+                    self._dbus_service.update_property(
+                        'org.mpris.MediaPlayer2.Player',
+                        prop
+                    )
 
         # Return True to continue polling
         return True
@@ -514,8 +551,8 @@ class MPRISInterface(dbus.service.Object):
     def __get_metadata():
         try:
             index = int(sb_wrapper._status['playlist_cur_index'])
-        except:
-            return
+        except KeyError:
+            return format_metadata([], "Track")
         if index >= 0:
             track_id = sb_wrapper._status['playlist_loop'][index]['id']
             return format_metadata(lms.metadata(track_id), "Track")
@@ -535,16 +572,32 @@ class MPRISInterface(dbus.service.Object):
         return
 
     def __get_position():
-        #position = lms.get_position()
-        position = sb_wrapper._status['time']
+        try:
+            # position = lms.get_position()
+            position = sb_wrapper._status['time']
+        except KeyError:
+            position = 0
         return dbus.Int64(int(position * 1000000))
 
-    def __can_next():
+    def __can_go_next():
         status = sb_wrapper._status  # lms.get_playing_info()
         if 'playlist_cur_index' in status and 'playlist_tracks' in status:
-            if int(status['playlist_cur_index']) < int(status['playlist_tracks']):
+            if int(status['playlist_cur_index']) < int(status['playlist_tracks'] - 1):
                 return True
         return False
+
+    def __can_go_previous():
+        if 'playlist_cur_index' in sb_wrapper._status and \
+           int(sb_wrapper._status['playlist_cur_index']) > 0:
+            return True
+        else:
+            return False
+
+    def __can_play():
+        if sb_wrapper._status['playlist_tracks'] > 0:
+            return True
+        else:
+            return False
 
     def __can_seek():
         status = sb_wrapper._status  # lms.get_playing_info()
@@ -564,9 +617,9 @@ class MPRISInterface(dbus.service.Object):
         "Position": (__get_position, None),
         "MinimumRate": (1.0, None),
         "MaximumRate": (1.0, None),
-        "CanGoNext": (__can_next, None),
-        "CanGoPrevious": (True, None),
-        "CanPlay": (True, None),
+        "CanGoNext": (__can_go_next, None),
+        "CanGoPrevious": (__can_go_previous, None),
+        "CanPlay": (__can_play, None),
         "CanPause": (True, None),
         "CanSeek": (__can_seek, None),
         "CanControl": (True, None),
