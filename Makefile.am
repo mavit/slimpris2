@@ -5,7 +5,7 @@ dist_doc_DATA = README.md COPYING AUTHORS
 EXTRA_DIST = autogen.sh
 
 DISTCHECK_CONFIGURE_FLAGS = \
-        --with-systemduserpresetdir=$$dc_install_base/$(systemduserpresetdir)
+        --with-systemduserpresetdir=$$dc_install_base/$(systemduserpresetdir) \
         --with-systemduserunitdir=$$dc_install_base/$(systemduserunitdir)
 
 dist-hook:
