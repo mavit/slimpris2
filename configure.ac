@@ -1,4 +1,4 @@
-AC_INIT(slimpris2, 1.0.1)
+AC_INIT(slimpris2, 1.0.2)
 AM_INIT_AUTOMAKE()
 AM_PATH_PYTHON([3.6])
 GETTEXT_PACKAGE=slimpris2
