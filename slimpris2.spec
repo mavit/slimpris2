@@ -12,6 +12,8 @@ BuildRequires:          autoconf
 BuildRequires:          automake
 BuildRequires:          intltool
 BuildRequires:          python3-devel
+BuildRequires:          systemd
+BuildRequires:          systemd-rpm-macros
 
 
 %description
@@ -33,10 +35,8 @@ into your desktop.
 %install
 %make_install
 rm %{buildroot}/%{_docdir}/%{name}/COPYING
-install -m 0644 -p %{buildroot}/%{_docdir}/%{name}/%{name}.conf \
-                   %{buildroot}/%{_sysconfdir}/%{name}.conf \
-                   %{buildroot}/%{_userpresetdir}/80-%{name}.preset \
-                   %{buildroot}/%{_userunitdir}/%{name}.service
+install -m 0644 -p -D %{buildroot}/%{_docdir}/%{name}/%{name}.conf \
+                      %{buildroot}/%{_sysconfdir}/%{name}.conf
 
 
 %files
