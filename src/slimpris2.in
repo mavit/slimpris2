@@ -502,7 +502,7 @@ class MPRISInterface(dbus.service.Object):
         "CanRaise": (False, None),
         "Fullscreen": (False, None),
         "CanSetFullscreen": (False, None),
-        "DesktopEntry": ("slimpris2", None),
+        "DesktopEntry": (__name, None),
         "HasTrackList": (True, None),
         "Identity": (identity, None),
         "SupportedUriSchemes": (dbus.Array(signature="s"), None),
