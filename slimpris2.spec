@@ -34,22 +34,23 @@ into your desktop.
 %make_install
 rm %{buildroot}/%{_docdir}/%{name}/COPYING
 install -m 0644 -p %{buildroot}/%{_docdir}/%{name}/%{name}.conf \
-                   %{buildroot}/%{_sysconfdir}/%{name}.conf
+                   %{buildroot}/%{_sysconfdir}/%{name}.conf \
+                   %{buildroot}/%{_userpresetdir}/80-%{name}.preset \
+                   %{buildroot}/%{_userunitdir}/%{name}.service
 
 
 %files
 %config(noreplace) %{_sysconfdir}/%{name}.conf
-%config(noreplace) %{_sysconfdir}/xdg/autostart/%{name}.desktop
 %doc AUTHORS
 %doc README.md
 %doc src/%{name}.conf
 %license COPYING
 %{_bindir}/%{name}
-%{_datadir}/applications/%{name}.desktop
+%{_datadir}/applications/org.mpris.MediaPlayer2.squeezebox.desktop
 %{_datadir}/dbus-1/services/org.mpris.MediaPlayer2.squeezebox.service
 %{_datadir}/locale/*/LC_MESSAGES/%{name}.mo
+%{_userpresetdir}/80-%{name}.preset
+%{_userunitdir}/%{name}.service
 
 
 %changelog
-* Tue May  1 2018 Peter Oliver <rpm@mavit.org.uk>
-- Initial package.

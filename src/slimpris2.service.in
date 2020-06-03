@@ -1,0 +1,13 @@
+[Unit]
+Description=Squeezebox MPRIS remote control
+After=gnome-session.target
+Requisite=gnome-session.target
+
+[Service]
+Type=dbus
+ExecStart=@bindir@/slimpris2
+BusName=org.mpris.MediaPlayer2.squeezebox
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

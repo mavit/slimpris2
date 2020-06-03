@@ -1,15 +1,18 @@
 desktopdir = ${datadir}/applications/
 dbusdir = ${datadir}/dbus-1/services/
-autostartdir = ${sysconfdir}/xdg/autostart/
 
 dist_bin_SCRIPTS = slimpris2
-dist_desktop_DATA = slimpris2.desktop
-autostart_DATA = slimpris2.desktop
+dist_desktop_DATA = org.mpris.MediaPlayer2.squeezebox.desktop
 dist_doc_DATA = slimpris2.conf
 nodist_dbus_DATA = org.mpris.MediaPlayer2.squeezebox.service
 
-EXTRA_DIST = org.mpris.MediaPlayer2.squeezebox.service.in slimpris2.in
-CLEANFILES = org.mpris.MediaPlayer2.squeezebox.service slimpris2.py slimpris2
+if HAVE_SYSTEMD
+nodist_systemduserunit_DATA = slimpris2.service
+systemduserpreset_DATA = 80-slimpris2.preset
+endif
+
+EXTRA_DIST = org.mpris.MediaPlayer2.squeezebox.service.in slimpris2.service.in slimpris2.in
+CLEANFILES = org.mpris.MediaPlayer2.squeezebox.service slimpris2.service slimpris2.py slimpris2
 
 edit = sed -e 's|@bindir[@]|$(bindir)|g' \
 	   -e 's|@datadir[@]|$(datadir)|g' \
@@ -20,10 +23,10 @@ slimpris2: slimpris2.in
 	chmod +x $@
 	ln -sf $@ $@.py
 
-org.mpris.MediaPlayer2.squeezebox.service: org.mpris.MediaPlayer2.squeezebox.service.in
+%.service: %.service.in
 	$(edit) $< > $@
 
 test: test-desktop
 
-test-desktop: slimpris2.desktop
+test-desktop: org.mpris.MediaPlayer2.squeezebox.desktop
 	desktop-file-validate $<

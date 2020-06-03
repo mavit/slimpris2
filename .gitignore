@@ -8,9 +8,9 @@ missing
 aclocal.m4
 autom4te.cache
 org.mpris.MediaPlayer2.squeezebox.service
+slimpris2.service
 POTFILES
 *.gmo
 stamp-it
 slimpris2
 slimpris2.py
-

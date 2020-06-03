@@ -7,4 +7,3 @@ StartupNotify=false
 Type=Application
 Categories=AudioVideo;Audio;Music;Player
 NoDisplay=true
-X-DBUS-ServiceName=org.mpris.MediaPlayer2.squeezebox
