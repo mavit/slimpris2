@@ -1,7 +1,5 @@
 [Unit]
 Description=Squeezebox MPRIS remote control
-After=gnome-session.target
-Requisite=gnome-session.target
 
 [Service]
 Type=dbus
