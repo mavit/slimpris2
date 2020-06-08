@@ -427,7 +427,7 @@ class SBWrapper():
             self.monitor()
         except Exception:
             logger.critical('Uncaught exception', exc_info=True)
-            loop.quit()
+            exit(os.EX_SOFTWARE)
         return True
 
     def on_mediakey(self, appname, key):
