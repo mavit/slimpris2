@@ -1173,7 +1173,6 @@ Usage: %(progname)s [OPTION]... [LMS_HOST LMS_PORT PLAYER]
 
 Default: LMS_HOST: %(host)s
          LMS_PORT: %(port)s
-         PLAYER: %(mac)s
 
 Report bugs to https://github.com/mavit/slimpris2/issues""" % params)
 
