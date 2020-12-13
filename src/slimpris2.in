@@ -58,7 +58,7 @@ params = {
     'progname': sys.argv[0],
     'music_dir': '',
     'mmkeys': True,
-    'notify': True,
+    'notify': False,
     'insecure_https': False,
     'poll_period': 5,
 }
