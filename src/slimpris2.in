@@ -53,7 +53,6 @@ params = {
     'scheme': 'http',
     'host': 'localhost',
     'port': 9000,
-    'mac': '00:00:00:00:00:01',
     'password': None,
     'progname': sys.argv[0],
     'music_dir': '',
@@ -1167,14 +1166,14 @@ class CLIConnection(LMSConnection):
 
 def usage(params):
     print("""\
-Usage: %(progname)s [OPTION]... [LMS_HOST] [LMS_PORT] [PLAYER_MAC]
+Usage: %(progname)s [OPTION]... [LMS_HOST LMS_PORT PLAYER]
 
      -p, --path=PATH        Sets the library path of LMS to PATH
      -d, --debug            Run in debug mode
 
 Default: LMS_HOST: %(host)s
          LMS_PORT: %(port)s
-         PLAYER_MAC: %(mac)s
+         PLAYER: %(mac)s
 
 Report bugs to https://github.com/mavit/slimpris2/issues""" % params)
 
@@ -1220,6 +1219,8 @@ if __name__ == '__main__':
         params['port'] = config.get('Connection', 'port')
     if config.has_option('Connection', 'mac'):
         params['mac'] = config.get('Connection', 'mac')
+    if config.has_option('Connection', 'player'):
+        params['mac'] = config.get('Connection', 'player')
     if config.has_option('Connection', 'username'):
         params['username'] = config.get('Connection', 'username')
     if config.has_option('Connection', 'password'):
@@ -1245,9 +1246,14 @@ if __name__ == '__main__':
         pass
     else:
         usage(params)
-        sys.exit()
+        sys.exit(2)
 
-    params['mac'] = params['mac'].replace('-', ':')
+    if 'mac' not in params or params['mac'] == '':
+        logger.fatal("No player name or MAC address specified either in the config file or on the command line")
+        sys.exit(2)
+
+    if re.search(r'^(?:\d\d.){5}\d\d$', params['mac']):
+        params['mac'] = params['mac'].replace('-', ':')
 
     if path and os.path.exists(path):
         logger.info('Using %s as music library path' % path)
