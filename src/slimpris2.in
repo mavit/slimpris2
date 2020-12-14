@@ -877,19 +877,6 @@ def format_metadata(data, context):
     if 'lyrics' in metadata:
         metadata['xesam:asText'] = metadata['lyrics']
 
-    if 'addedTime' in metadata:
-        saved_locale = locale.setlocale(locale.LC_TIME)
-        try:
-            locale.setlocale(locale.LC_TIME, 'C')
-            metadata['xesam:firstUsed'] = datetime.datetime.strptime(
-                metadata['addedTime'],
-                '%A, %d %B %Y, %H:%M'
-            ).isoformat()
-        except ValueError as e:
-            logger.warning('Could not parse addedTime: %s' % e)
-        finally:
-            locale.setlocale(locale.LC_TIME, saved_locale)
-
     for tag in ('album', 'title', 'url'):
         if tag in metadata:
             metadata['xesam:%s' % tag] = metadata[tag]
@@ -962,7 +949,7 @@ class LMSConnection:
         #path = self.get_track_path()
         songinfo = self.query(
             self.player_id, "songinfo", "0", None,
-            "tags:acdDgijkKlmOtuwy",
+            "tags:acdgijkKlmOtuwy",
             "track_id:%s" % track_id
         )
 
