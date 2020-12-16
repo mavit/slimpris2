@@ -1,6 +1,6 @@
 Name:                   slimpris2
-Version:                1.0.3
-Release:                0.2%{?dist}
+Version:                1.1.0
+Release:                0.1%{?dist}
 Summary:                MPRIS remote control of Logitech Media Server
 
 License:                GPLv3
