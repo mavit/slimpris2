@@ -229,7 +229,7 @@ class SBWrapper():
         # init mmkeys, if configured
         if self._params['mmkeys']:
             try:
-                gsd_object = dbus.SessionBus().get_object('org.gnome.SettingsDaemon',
+                gsd_object = dbus.SessionBus().get_object('org.gnome.SettingsDaemon.MediaKeys',
                                                           '/org/gnome/SettingsDaemon/MediaKeys')
                 # this is what gives us the multi media keys.
                 gsd_object.GrabMediaPlayerKeys('Squeezebox', 0,
