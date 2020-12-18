@@ -55,7 +55,6 @@ params = {
     'port': 9000,
     'password': None,
     'progname': sys.argv[0],
-    'music_dir': '',
     'mmkeys': True,
     'notify': False,
     'insecure_https': False,
@@ -1155,7 +1154,6 @@ def usage(params):
     print("""\
 Usage: %(progname)s [OPTION]... [LMS_HOST LMS_PORT PLAYER]
 
-     -p, --path=PATH        Sets the library path of LMS to PATH
      -d, --debug            Run in debug mode
 
 Default: LMS_HOST: %(host)s
@@ -1170,7 +1168,7 @@ if __name__ == '__main__':
 
     try:
         (opts, args) = getopt.getopt(sys.argv[
-            1:], 'hdp:', ['help', 'debug', 'path='])
+            1:], 'hdp:', ['help', 'debug'])
     except getopt.GetoptError as xxx_todo_changeme:
         (msg, opt) = xxx_todo_changeme.args
         print(sys.argv[0] + ': ' + msg)
@@ -1185,8 +1183,6 @@ if __name__ == '__main__':
         if opt in ['-h', '--help']:
             usage(params)
             sys.exit()
-        elif opt in ['-p', '--path']:
-            path = arg
         elif opt in ['-d', '--debug']:
             log_level = logging.DEBUG
 
@@ -1211,8 +1207,6 @@ if __name__ == '__main__':
         params['username'] = config.get('Connection', 'username')
     if config.has_option('Connection', 'password'):
         params['password'] = config.get('Connection', 'password')
-    if config.has_option('Connection', 'music_dir'):
-        path = config.get('Connection', 'music_dir')
     if config.has_option('Connection', 'insecure_https'):
         params['insecure_https'] = config.getboolean('Connection',
                                                      'insecure_https')
@@ -1240,19 +1234,6 @@ if __name__ == '__main__':
 
     if re.search(r'^(?:\d\d.){5}\d\d$', params['mac']):
         params['mac'] = params['mac'].replace('-', ':')
-
-    if path and os.path.exists(path):
-        logger.info('Using %s as music library path' % path)
-        if not path.startswith('file://'):
-            params['music_dir'] = 'file://' + path
-    else:
-        try:
-            if path:
-                os.stat(path)
-        except OSError as e:
-            logger.warning('Music library path: %s' % e)
-        logger.warning('By not supplying a path for the music library '
-                       'this program will break the MPRIS specification!')
 
     for bling in ['mmkeys', 'notify']:
         if config.has_option('Bling', bling):
