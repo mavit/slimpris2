@@ -778,9 +778,10 @@ class MPRISInterface(dbus.service.Object):
         logger.debug("Seeked to %i" % position)
         return dbus.Int64(position)
 
-    @dbus.service.method(__player_interface, in_signature='', out_signature='')
-    def OpenUri(self):
-        # TODO
+    @dbus.service.method(__player_interface, in_signature='s', out_signature='')
+    def OpenUri(self, uri):
+        lms.playlist_add(uri)
+        lms.play()
         return
 
     # Tracklist methods
@@ -795,9 +796,9 @@ class MPRISInterface(dbus.service.Object):
             )
         return dbus.Array(metadata, signature="a{sv}")
 
-    @dbus.service.method(__tracklist_interface, in_signature='sob', out_signature='')
-    def AddTrack(self, uri, after_track, set_as_current):
-        return
+    # @dbus.service.method(__tracklist_interface, in_signature='sob', out_signature='')
+    # def AddTrack(self, uri, after_track, set_as_current):
+    #     return
 
     @dbus.service.method(__tracklist_interface, in_signature='o', out_signature='')
     def RemoveTrack(self, track_id):
@@ -1029,6 +1030,9 @@ class LMSConnection:
 
     def playlist_goto(self, playlist_index):
         return self.query(self.player_id, "playlist", "index", playlist_index)
+
+    def playlist_add(self, uri):
+        return self.query(self.player_id, "playlist", "add", uri)
 
     def playlist_remove(self, playlist_index):
         return self.query(self.player_id, "playlist", "delete", playlist_index)
