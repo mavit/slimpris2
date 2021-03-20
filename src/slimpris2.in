@@ -56,18 +56,10 @@ params = {
     'password': None,
     'progname': sys.argv[0],
     'mmkeys': True,
-    'notify': False,
     'insecure_https': False,
     'poll_period': 5,
 }
 
-try:
-    from gi.repository import Notify
-except:
-    params['notify'] = False
-
-
-notification = None
 
 # MPRIS allowed metadata tags
 allowed_tags = {
@@ -289,7 +281,6 @@ class SBWrapper():
 
     def reconnect(self):
         logger.warning("Disconnected")
-        notification.rnotify(identity, _('Disconnected'), 'error')
         # Release the Dbus name
         self._dbus_service.release_name()
         # Disconnect service from the session bus
@@ -346,17 +337,6 @@ class SBWrapper():
                     'org.mpris.MediaPlayer2.Player',
                     'CanSeek'
                 )
-                if self._params['notify']:
-                    uri = 'sound'
-                    if 'mpris:artUrl' in metadata:
-                        uri = metadata['mpris:artUrl']
-                    title = 'Unknown Title'
-                    if 'xesam:title' in metadata:
-                        title = metadata['xesam:title']
-                    artist = 'Unknown Artist'
-                    if 'xesam:artist' in metadata:
-                        artist = metadata['xesam:artist'][0]
-                    notification.notify(title, _('by %s') % artist, uri)
             elif 'playlist_loop' in old_status \
                  and 'playlist_loop' not in self._status:
                 metadata = self._dbus_service.update_property(
@@ -433,45 +413,15 @@ class SBWrapper():
         logger.debug('Got GNOME mmkey "%s" for "%s"' % (key, appname))
         if key == 'Play':
             if self._status['mode'] == 'play':
-                notification.rnotify(identity, _('Paused'))
                 lms.pause()
             else:
-                notification.rnotify(identity, _('Playing'))
                 lms.play()
         elif key == 'Next':
             next(lms)
         elif key == 'Previous':
             lms.prev()
         elif key == 'Stop':
-            notification.rnotify(identity, _('Stopped'))
             lms.stop()
-
-
-class Notify:
-
-    def __init__(self, params):
-        """ Init the notification system """
-        if params['notify']:
-            if Notify.init(identity):
-                self._notification = Notify.Notification("", "", "")
-            else:
-                logger.error('Failed to init libnotify; disabling'
-                             'notifications')
-                self._notification = False
-        else:
-            self._notification = False
-
-    def notify(self, title, body, uri=''):
-        """ Issue a new notification """
-        if self._notification:
-            self._notification = Notify.Notification(title, body, uri)
-            self._notification.show()
-
-    def rnotify(self, title, body, uri=''):
-        """ Replace current notification """
-        if self._notification:
-            self._notification.update(title, body, uri)
-            self._notification.show()
 
 
 class MPRISInterface(dbus.service.Object):
@@ -717,7 +667,6 @@ class MPRISInterface(dbus.service.Object):
         status = lms.get_mode()
         if status == 'play':
             lms.pause()
-            notification.rnotify(identity, _('Paused'))
         return
 
     @dbus.service.method(__player_interface, in_signature='', out_signature='')
@@ -725,22 +674,18 @@ class MPRISInterface(dbus.service.Object):
         status = lms.get_mode()
         if status == 'play':
             lms.pause()
-            notification.rnotify(identity, _('Paused'))
         else:
             lms.play()
-            notification.rnotify(identity, _('Playing'))
         return
 
     @dbus.service.method(__player_interface, in_signature='', out_signature='')
     def Stop(self):
         lms.stop()
-        notification.rnotify(identity, _('Stopped'))
         return
 
     @dbus.service.method(__player_interface, in_signature='', out_signature='')
     def Play(self):
         lms.play()
-        notification.notify(identity, _('Playing'))
         return
 
     @dbus.service.method(__player_interface, in_signature='x', out_signature='')
@@ -1246,7 +1191,7 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
     if re.search(r'^(?:\d\d.){5}\d\d$', params['mac']):
         params['mac'] = params['mac'].replace('-', ':')
 
-    for bling in ['mmkeys', 'notify']:
+    for bling in ['mmkeys']:
         if config.has_option('Bling', bling):
             params[bling] = config.getboolean('Bling', bling)
 
@@ -1255,9 +1200,6 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
 
     # Used to communicate with LMS
     lms = JSONConnection(params)
-
-    # Wrapper to send notifications
-    notification = Notify(params)
 
     # Create wrapper to handle connection failures with LMS more gracefully
     sb_wrapper = SBWrapper(params)
