@@ -16,7 +16,8 @@ CLEANFILES = org.mpris.MediaPlayer2.squeezebox.service slimpris2.service slimpri
 
 edit = sed -e 's|@bindir[@]|$(bindir)|g' \
 	   -e 's|@datadir[@]|$(datadir)|g' \
-	   -e 's|@PYTHON[@]|$(PYTHON)|g'
+	   -e 's|@PYTHON[@]|$(PYTHON)|g' \
+	   -e 's|@VERSION[@]|$(VERSION)|g'
 
 slimpris2: slimpris2.in
 	$(edit) $< > $@

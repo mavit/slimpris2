@@ -1161,9 +1161,7 @@ Usage: %(progname)s [OPTION]... [LMS_HOST LMS_PORT PLAYER]
      -d, --debug            Run in debug mode
 
 Default: LMS_HOST: %(host)s
-         LMS_PORT: %(port)s
-
-Report bugs to https://github.com/mavit/slimpris2/issues""" % params)
+         LMS_PORT: %(port)s""" % params)
 
 if __name__ == '__main__':
     DBusGMainLoop(set_as_default=True)
@@ -1172,7 +1170,7 @@ if __name__ == '__main__':
 
     try:
         (opts, args) = getopt.getopt(sys.argv[
-            1:], 'hdp:', ['help', 'debug'])
+            1:], 'hdV', ['help', 'debug', 'version'])
     except getopt.GetoptError as xxx_todo_changeme:
         (msg, opt) = xxx_todo_changeme.args
         print(sys.argv[0] + ': ' + msg)
@@ -1186,6 +1184,15 @@ if __name__ == '__main__':
     for (opt, arg) in opts:
         if opt in ['-h', '--help']:
             usage(params)
+            sys.exit()
+        if opt in ['-V', '--version']:
+            print("""slimpris2 @VERSION@
+
+Copyright (C) 2011-2021 Peter Oliver, Bart Lauret, Jean-Philippe Braun.
+This program comes with ABSOLUTELY NO WARRANTY.  This is free software,
+and you are welcome to redistribute it under certain conditions.
+
+Report bugs to https://github.com/mavit/slimpris2/issues""")
             sys.exit()
         elif opt in ['-d', '--debug']:
             log_level = logging.DEBUG
