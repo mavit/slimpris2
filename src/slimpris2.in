@@ -19,31 +19,33 @@
 #  Jean-Philippe Braun <eon@patapon.info>
 # Some bits taken from quodlibet mpris plugin by <christoph.reiter@gmx.at>
 
-import os
-import sys
-import re
-import signal
-import socket
-import getopt
-from gi.repository import GLib
+
+from dbus.mainloop.glib import DBusGMainLoop
 import dbus
 import dbus.service
-from dbus.mainloop.glib import DBusGMainLoop
-import six.moves.configparser
+import getopt
+import gettext
+import gi
+import json
 import logging
-import datetime
-import locale
-
+import math
+import os
+import re
+import signal
 import simplejson
-import urllib.request
+import six
+import six.moves.configparser
+import six.moves.http_client
+import ssl
+import sys
 import urllib.error
 import urllib.parse
-import ssl
-import telnetlib
-import six.moves.http_client
+import urllib.request
 
-import gettext
-import six
+gi.require_version('Soup', '2.4')
+from gi.repository import GLib, Gio, Soup
+
+
 gettext.bindtextdomain('slimpris2', '@datadir@/locale')
 gettext.textdomain('slimpris2')
 _ = gettext.gettext
@@ -996,8 +998,7 @@ class JSONConnection(LMSConnection):
             self.username = params['username']
         if 'password' in params:
             self.password = params['password']
-        self.server_url = "%s://%s:%s/jsonrpc.js" % (
-            self.scheme, self.host, self.port)
+        self.jsonrpc_url = f"{self.scheme}://{self.host}:{self.port}/jsonrpc.js"
         self.player_id = params['mac']
         if 'insecure_https' in params:
             self.insecure_https = params['insecure_https']
@@ -1035,7 +1036,7 @@ class JSONConnection(LMSConnection):
     def query(self, player_id, *args):
         params = simplejson.dumps(
             {'id': 1, 'method': 'slim.request', 'params': [player_id, list(args)]})
-        req = urllib.request.Request(self.server_url, params.encode('utf8'))
+        req = urllib.request.Request(self.jsonrpc_url, params.encode('utf8'))
 
         try:
             response = urllib.request.urlopen(req)
@@ -1046,6 +1047,126 @@ class JSONConnection(LMSConnection):
         result = simplejson.loads(response_txt)['result']
         logging.debug("query: %s, result: %s", list(args), result)
         return result
+
+
+class CometConnection(JSONConnection):
+    def __init__(self, params):
+        super().__init__(params)
+
+        self.comet_url = f"{self.scheme}://{self.host}:{self.port}/cometd/"
+        self.comet_id = 0
+
+        self.session = Soup.Session()
+        self.session.props.user_agent = "slimpris2/@VERSION@ "
+        if logger.isEnabledFor(logging.DEBUG):
+            self.session.add_feature(
+                Soup.Logger.new(Soup.LoggerLogLevel.HEADERS, -1)
+            )
+
+        self.handshake()
+
+    def get_comet_id(self):
+        self.comet_id += 1
+        return self.comet_id
+
+    def handshake(self):
+        self.send_comet_requests([{
+            'channel': f'/meta/handshake',
+            'version': '1.0',
+            'minimumVersion': '1.0',
+            'supportedConnectionTypes': ['long-polling'],
+            'id': self.get_comet_id(),
+        }])
+        return False
+
+    def meta_subscribe(self):
+        self.send_comet_requests([{
+            'channel': '/meta/subscribe',
+            'clientId': self.client_id,
+            'id': self.get_comet_id(),
+            'subscription': f'/{self.client_id}/**',
+        }])
+        return False
+
+    def slim_subscribe(self):
+        mac = '00:04:20:07:3b:8e'
+        self.send_comet_requests([{
+            'channel': f'/slim/subscribe',
+            'clientId': self.client_id,
+            'data': {
+                'request': [
+                    mac,
+                    ["status", "0", None, "tags:"],
+                ],
+                'response': f'/{self.client_id}/slim/status/{mac}',
+            },
+            'id': self.get_comet_id(),
+        }])
+        return False
+
+    def connect(self):
+        self.send_comet_requests([{
+            'channel': f'/meta/connect',
+            'clientId': self.client_id,
+            'connectionType': 'long-polling',
+            'id': self.get_comet_id(),
+        }])
+        return False
+
+    def send_comet_requests(self, requests):
+        message = Soup.Message.new("POST", self.comet_url)
+        message.set_request(
+            'application/json; charset=UTF-8',
+            Soup.MemoryUse.COPY,
+            json.dumps(requests).encode()
+        )
+        self.session.send_async(
+            message, None, self.receive_comet_responses, message
+        )
+
+    def receive_comet_responses(self, session, result, message):
+        try:
+            input_stream = session.send_finish(result)
+        except GLib.Error as e:
+            if e.matches(Gio.io_error_quark(), Gio.IOErrorEnum.TIMED_OUT):
+                self.session.send_async(
+                    message, None, self.receive_comet_responses, message
+                )
+            else:
+                raise
+
+        status_code = message.status_code
+        if 200 <= status_code and status_code < 300:
+            if input_stream:
+                # I couldn't get Gio.InputStream.read_all() to work :-(
+                content, length = Gio.DataInputStream.new(input_stream) \
+                                                     .read_upto("\00", 1, None)
+                for msg in json.loads(content):
+                    logger.debug(f"Received comet response: {msg}")
+                    if msg['channel'] == '/meta/handshake':
+                        if msg['successful']:
+                            self.client_id = msg['clientId']
+                            GLib.timeout_add(0, self.meta_subscribe)
+                            GLib.timeout_add(0, self.connect)
+                        else:
+                            logger.error("FIXME: handle errors here")
+                    elif msg['channel'] == '/meta/subscribe':
+                        if msg['successful']:
+                            GLib.timeout_add(0, self.slim_subscribe)
+                        else:
+                            logger.error("FIXME: handle errors here")
+                    elif msg['channel'] == '/meta/connect':
+                        GLib.timeout_add_seconds(
+                            math.ceil(int(msg['advice']['interval'])/1000),
+                            self.connect,
+                        )
+                        if msg['successful']:
+                            None
+                        else:
+                            logger.error("FIXME: handle errors here")
+            else:
+                logger.debug("handle errors here")
+
 
 
 def usage(params):
@@ -1148,7 +1269,7 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
     signal.signal(signal.SIGINT, handle_sigint)
 
     # Used to communicate with LMS
-    lms = JSONConnection(params)
+    lms = CometConnection(params)
 
     # Create wrapper to handle connection failures with LMS more gracefully
     sb_wrapper = SBWrapper(params)
