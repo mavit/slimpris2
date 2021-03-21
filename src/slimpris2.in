@@ -1048,57 +1048,6 @@ class JSONConnection(LMSConnection):
         return result
 
 
-class CLIConnection(LMSConnection):
-
-    def __init__(self, params):
-
-        self.host = params['host']
-        self.port = 9090
-        self.player_id = params['mac']
-        self._telnet = telnetlib.Telnet(self.host, self.port)
-
-    def login(self):
-        result = self.query("login", self.username, self.password)
-        self.logged_in = (result == "******")
-
-    def query(self, player_id, *args):
-
-        req = player_id.encode('utf8') + ' '
-        for arg in args:
-            if arg:
-                req += arg.encode('utf8') + ' '
-        self._telnet.write(req + "\n")
-        response = self._telnet.read_until("\n")[:-1].decode('utf8')
-
-        #logging.info("req: %s, response: %s", req, response)
-        print("REQ:", req)
-        print("RES:", response)
-
-        split = response.split(' ')
-        result = {}
-        for n, item in enumerate(split):
-            item = urllib.parse.unquote(item)
-
-            if re.match("[0-9a-f]{2}([-:][0-9a-f]{2}){5}$", item.lower()):
-                result['player_id'] = item
-
-            elif len(args) > n:
-                if args[n] == "?":
-                    print(args[n], item)
-
-            elif ":" in item:
-                key, value = item.split(":", 1)
-                try:
-                    if float(value) - int(value) == 0:
-                        result[key] = int(value)
-                    else:
-                        result[key] = float(value)
-                except:
-                    result[key] = value
-        print(result)
-        return result
-
-
 def usage(params):
     print("""\
 Usage: %(progname)s [OPTION]... [LMS_HOST LMS_PORT PLAYER]
