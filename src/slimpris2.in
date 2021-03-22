@@ -26,6 +26,7 @@ import dbus.service
 import getopt
 import gettext
 import gi
+import inspect
 import json
 import logging
 import math
@@ -59,7 +60,6 @@ params = {
     'progname': sys.argv[0],
     'mmkeys': True,
     'insecure_https': False,
-    'poll_period': 5,
 }
 
 
@@ -220,6 +220,7 @@ class SBWrapper():
         self._position = 0
         self._dbus_service = False
         self._errors = 0
+        self._retry_period = 1
         # init mmkeys, if configured
         if self._params['mmkeys']:
             try:
@@ -238,12 +239,7 @@ class SBWrapper():
 
     def run(self):
         """ Try to connect to LMS """
-        if self.my_connect():
-            # If connection fails, retry periodically.
-            GLib.timeout_add_seconds(
-                self._params['poll_period'],
-                self.my_connect
-            )
+        GLib.timeout_add_seconds(0, self.my_connect)
 
     def my_connect(self):
         """ Init LMS connection """
@@ -261,15 +257,13 @@ class SBWrapper():
 
             # Init internal state to throw events at start
             self.init_state()
-            # Add periodic status check for sending MPRIS events
-            self._monitor = GLib.timeout_add_seconds(
-                self._params['poll_period'],
-                self.monitor_until_exception
-            )
+
+            # Subscribe to LMS status changes
+            lms.run()
+
             # Reset error counter
             self._errors = 0
-            # Return False to stop trying to connect
-            return False
+            self._retry_period = 1
         except (
                 six.moves.http_client.BadStatusLine,
                 urllib.error.URLError
@@ -279,7 +273,12 @@ class SBWrapper():
                 logger.error('Could not connect to LMS: %s' % e)
             if self._errors == 6:
                 logger.info('Continue to connect but going silent')
-            return True
+            GLib.timeout_add_seconds(self._retry_period, self.my_connect)
+            if self._retry_period < 60:
+                self._retry_period = self._retry_period * 2
+
+        # Return False to stop trying to connect
+        return False
 
     def reconnect(self):
         logger.warning("Disconnected")
@@ -307,11 +306,11 @@ class SBWrapper():
         self._position = 0
         self.monitor()
 
-    def monitor(self):
+    def monitor(self, status=None):
         old_status = self._status
         old_position = self._position
 
-        self._status = lms.get_playing_info()
+        self._status = status or lms.get_playing_info()
 
         if type(self._status) == type(dict()):
 
@@ -400,14 +399,6 @@ class SBWrapper():
                     )
 
         # Return True to continue polling
-        return True
-
-    def monitor_until_exception(self):
-        try:
-            self.monitor()
-        except Exception:
-            logger.critical('Uncaught exception', exc_info=True)
-            exit(os.EX_SOFTWARE)
         return True
 
     def on_mediakey(self, appname, key):
@@ -1055,12 +1046,14 @@ class CometConnection(JSONConnection):
 
         self.comet_url = f"{self.scheme}://{self.host}:{self.port}/cometd/"
         self.comet_id = 0
+        self.retry_period = 1
 
+    def run(self):
         self.session = Soup.Session()
         self.session.props.user_agent = "slimpris2/@VERSION@ "
         if logger.isEnabledFor(logging.DEBUG):
             self.session.add_feature(
-                Soup.Logger.new(Soup.LoggerLogLevel.HEADERS, -1)
+                Soup.Logger.new(Soup.LoggerLogLevel.BODY, 1024)
             )
 
         self.handshake()
@@ -1071,7 +1064,7 @@ class CometConnection(JSONConnection):
 
     def handshake(self):
         self.send_comet_requests([{
-            'channel': f'/meta/handshake',
+            'channel': '/meta/handshake',
             'version': '1.0',
             'minimumVersion': '1.0',
             'supportedConnectionTypes': ['long-polling'],
@@ -1082,23 +1075,28 @@ class CometConnection(JSONConnection):
     def meta_subscribe(self):
         self.send_comet_requests([{
             'channel': '/meta/subscribe',
-            'clientId': self.client_id,
+            'clientId': self.comet_client_id,
             'id': self.get_comet_id(),
-            'subscription': f'/{self.client_id}/**',
+            'subscription': f'/{self.comet_client_id}/**',
         }])
         return False
 
     def slim_subscribe(self):
-        mac = '00:04:20:07:3b:8e'
         self.send_comet_requests([{
-            'channel': f'/slim/subscribe',
-            'clientId': self.client_id,
+            'channel': '/slim/subscribe',
+            'clientId': self.comet_client_id,
             'data': {
                 'request': [
-                    mac,
-                    ["status", "0", None, "tags:"],
+                    self.player_id,
+                    [
+                        "status",
+                        "0",
+                        None,
+                        "tags:acdgijkKlmOtuwy",
+                        "subscribe:0"
+                    ],
                 ],
-                'response': f'/{self.client_id}/slim/status/{mac}',
+                'response': f'/{self.comet_client_id}/slim/status/{self.player_id}',
             },
             'id': self.get_comet_id(),
         }])
@@ -1107,14 +1105,17 @@ class CometConnection(JSONConnection):
     def connect(self):
         self.send_comet_requests([{
             'channel': f'/meta/connect',
-            'clientId': self.client_id,
+            'clientId': self.comet_client_id,
             'connectionType': 'long-polling',
             'id': self.get_comet_id(),
         }])
         return False
 
     def send_comet_requests(self, requests):
-        message = Soup.Message.new("POST", self.comet_url)
+        message = Soup.Message.new(
+            "POST",
+            self.comet_url + inspect.currentframe().f_back.f_code.co_name
+        )
         message.set_request(
             'application/json; charset=UTF-8',
             Soup.MemoryUse.COPY,
@@ -1124,49 +1125,89 @@ class CometConnection(JSONConnection):
             message, None, self.receive_comet_responses, message
         )
 
+    def retry(self, message):
+        self.session.send_async(
+            message, None, self.receive_comet_responses, message
+        )
+        return False
+
     def receive_comet_responses(self, session, result, message):
         try:
             input_stream = session.send_finish(result)
-        except GLib.Error as e:
-            if e.matches(Gio.io_error_quark(), Gio.IOErrorEnum.TIMED_OUT):
-                self.session.send_async(
-                    message, None, self.receive_comet_responses, message
+            status_code = message.status_code
+            if not (200 <= status_code and status_code < 300):
+                raise HttpNonSuccessException(
+                    message.status_code,
+                    message.reason_phrase,
                 )
+        except (GLib.Error, HttpNonSuccessException) as e:
+            if isinstance(e, GLib.Error) \
+               and e.matches(Gio.io_error_quark(), Gio.IOErrorEnum.TIMED_OUT):
+                # We expect long polling to time out eventually, so
+                # retry immediately:
+                retry_period = 0
             else:
-                raise
+                retry_period = self.retry_period
+                if self.retry_period < 60:
+                    self.retry_period = self.retry_period * 2
+                logger.error(f"{message.get_uri().to_string(False)}: {e.code} {e.message}")
+                logger.info(f"Will retry in {retry_period} seconds")
+            GLib.timeout_add_seconds(retry_period, self.retry, message)
+            return
 
-        status_code = message.status_code
-        if 200 <= status_code and status_code < 300:
-            if input_stream:
-                # I couldn't get Gio.InputStream.read_all() to work :-(
-                content, length = Gio.DataInputStream.new(input_stream) \
-                                                     .read_upto("\00", 1, None)
-                for msg in json.loads(content):
-                    logger.debug(f"Received comet response: {msg}")
-                    if msg['channel'] == '/meta/handshake':
-                        if msg['successful']:
-                            self.client_id = msg['clientId']
-                            GLib.timeout_add(0, self.meta_subscribe)
-                            GLib.timeout_add(0, self.connect)
-                        else:
-                            logger.error("FIXME: handle errors here")
-                    elif msg['channel'] == '/meta/subscribe':
-                        if msg['successful']:
-                            GLib.timeout_add(0, self.slim_subscribe)
-                        else:
-                            logger.error("FIXME: handle errors here")
-                    elif msg['channel'] == '/meta/connect':
-                        GLib.timeout_add_seconds(
-                            math.ceil(int(msg['advice']['interval'])/1000),
-                            self.connect,
-                        )
-                        if msg['successful']:
-                            None
-                        else:
-                            logger.error("FIXME: handle errors here")
+        self.retry_period = 1
+
+        # I couldn't get Gio.InputStream.read_all() to work :-(
+        content, length = Gio.DataInputStream.new(input_stream) \
+                                             .read_upto("\00", 1, None)
+        for msg in json.loads(content):
+            logger.debug(f"Received comet response: {msg}")
+            if msg['channel'] == '/meta/handshake':
+                if msg['successful']:
+                    self.comet_client_id = msg['clientId']
+                    GLib.timeout_add(0, self.meta_subscribe)
+                    GLib.timeout_add(0, self.connect)
+                else:
+                    logger.critical(f"Handshake failed: {msg}")
+                    raise CometError(msg)
+            elif msg['channel'] == '/meta/subscribe':
+                if msg['successful']:
+                    GLib.timeout_add(0, self.slim_subscribe)
+                else:
+                    logger.critical(f"Subscription failed: {msg}")
+                    raise CometError(msg)
+            elif msg['channel'] == '/slim/subscribe':
+                if not msg['successful']:
+                    logger.critical(f"Subscription failed: {msg}")
+                    raise CometError(msg)
+            elif msg['channel'] == '/meta/connect':
+                GLib.timeout_add_seconds(
+                    math.ceil(int(msg['advice']['interval'])/1000),
+                    self.connect,
+                )
+                if msg['successful']:
+                    None
+                else:
+                    logger.warn(f"Connection failed: {msg}")
+            elif re.search(
+                    f"^/{re.escape(self.comet_client_id)}/slim/status/{re.escape(self.player_id)}$",
+                    msg['channel']
+            ):
+                sb_wrapper.monitor(msg['data'])
             else:
-                logger.debug("handle errors here")
+                logger.warn(f"Unexpected comet response: {msg}")
 
+
+class HttpNonSuccessException(Exception):
+    def __init__(self, code, message):
+        self.code = code
+        self.message = message
+
+
+# FIXME: handle these exceptions.
+class CometError(Exception):
+    def __init__(self, message):
+        self.message = message
 
 
 def usage(params):
