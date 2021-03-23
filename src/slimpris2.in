@@ -1207,9 +1207,7 @@ class CometConnection(JSONConnection):
                         math.ceil(int(msg['advice']['interval'])/1000),
                         self.connect,
                     )
-                if msg['successful']:
-                    None
-                else:
+                if not msg['successful']:
                     logger.warning(f"Connection failed: {msg}")
             elif re.search(
                     f"^/{re.escape(self.comet_client_id)}/slim/status/{re.escape(self.player_id)}$",
