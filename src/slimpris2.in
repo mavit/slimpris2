@@ -1210,7 +1210,7 @@ class CometConnection(JSONConnection):
                 if msg['successful']:
                     None
                 else:
-                    logger.warn(f"Connection failed: {msg}")
+                    logger.warning(f"Connection failed: {msg}")
             elif re.search(
                     f"^/{re.escape(self.comet_client_id)}/slim/status/{re.escape(self.player_id)}$",
                     msg['channel']
@@ -1221,7 +1221,7 @@ class CometConnection(JSONConnection):
                     logger.critical(f"Disconnection failed: {msg}")
                 loop.quit()
             else:
-                logger.warn(f"Unexpected comet response: {msg}")
+                logger.warning(f"Unexpected comet response: {msg}")
 
 
 class HttpNonSuccessException(Exception):
@@ -1305,10 +1305,10 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
                                                      'insecure_https')
 
     if config.has_option('Connection', 'username') and not config.has_option('Connection', 'password'):
-        logger.warn(
+        logger.warning(
             "A username, '%s', is set, but there is no corresponding password", params['username'])
     elif config.has_option('Connection', 'password') and not config.has_option('Connection', 'username'):
-        logger.warn(
+        logger.warning(
             "A password is set, but there is no corresponding username")
 
     if len(args) == 3 and args[1].isdigit():
