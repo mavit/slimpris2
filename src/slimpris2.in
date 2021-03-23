@@ -1034,6 +1034,10 @@ class JSONConnection(LMSConnection):
         params = simplejson.dumps(
             {'id': 1, 'method': 'slim.request', 'params': [player_id, list(args)]})
         req = urllib.request.Request(self.jsonrpc_url, params.encode('utf8'))
+        req.add_header(
+            'User-Agent',
+            'slimpris2/@VERSION@ Python-urllib/%d.%d' % sys.version_info[:2]
+        )
 
         try:
             response = urllib.request.urlopen(req)
