@@ -495,8 +495,14 @@ class MPRISInterface(dbus.service.Object):
         except KeyError:
             return format_metadata([], "Track")
         if index >= 0:
-            track_id = sb_wrapper._status['playlist_loop'][index]['id']
-            return format_metadata(lms.metadata(track_id), "Track")
+            track = sb_wrapper._status['playlist_loop'][index]
+            if 'playcount' in track:
+                # Comet gives us all the data we need.
+                metadata = [{k: v} for k, v in track.items()]
+            else:
+                # We didn't request everything we need, so get it now.
+                metadata = lms.metadata(track['id'])
+            return format_metadata(metadata, "Track")
         return
 
     def __get_volume():
