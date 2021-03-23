@@ -480,7 +480,7 @@ class MPRISInterface(dbus.service.Object):
             return "None"
 
     def __set_shuffle(value):
-        # TODO
+        lms.set_shuffle(1 if value else 0)
         return
 
     # FIXME:
