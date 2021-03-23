@@ -39,6 +39,7 @@ import six.moves.configparser
 import six.moves.http_client
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -522,7 +523,8 @@ class MPRISInterface(dbus.service.Object):
     def __get_position():
         try:
             # position = lms.get_position()
-            position = sb_wrapper._status['time']
+            position = sb_wrapper._status['time'] \
+                + time.monotonic() - sb_wrapper._status['last_fetch']
         except KeyError:
             position = 0
         return dbus.Int64(int(position * 1000000))
@@ -888,6 +890,7 @@ class LMSConnection:
     def get_playing_info(self):
         #{'signalstrength': 0, 'mixer volume': 100, 'player_name': 'Studeerkamer', 'playlist mode': 'off', 'power': 1, 'playlist repeat': 0, 'player_ip': '192.168.1.58:49078', 'playlist_timestamp': 1338368677.0128, 'playlist_cur_index': '0', 'playlist shuffle': 0, 'rate': 1, 'seq_no': 0, 'mode': 'play', 'time': 161.490672870636, 'duration': 314.232, 'can_seek': 1, 'playlist_tracks': 12, 'player_connected': 1}
         info = self.query(self.player_id, "status", "0", None, "tags:")
+        info['last_fetch'] = time.monotonic()
         return info or {"mode": "invalid"}
 
     def metadata(self, track_id):
@@ -1214,7 +1217,9 @@ class CometConnection(JSONConnection):
                     f"^/{re.escape(self.comet_client_id)}/slim/status/{re.escape(self.player_id)}$",
                     msg['channel']
             ):
-                sb_wrapper.monitor(msg['data'])
+                info = msg['data']
+                info['last_fetch'] = time.monotonic()
+                sb_wrapper.monitor(info)
             elif msg['channel'] == '/meta/disconnect':
                 if not msg['successful']:
                     logger.critical(f"Disconnection failed: {msg}")
