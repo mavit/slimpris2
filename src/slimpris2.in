@@ -351,6 +351,7 @@ class SBWrapper():
                 )
 
             if self._status['mode'] != 'stop' and old_status['mode'] != 'stop':
+                # FIXME: won't this trigger too often?
                 if (abs(self._position - old_position) > 2 and
                     old_status['playlist_cur_index'] == self._status['playlist_cur_index']) or \
                    old_status['playlist_cur_index'] == '-1':
@@ -692,32 +693,26 @@ class MPRISInterface(dbus.service.Object):
 
     @dbus.service.method(__player_interface, in_signature='x', out_signature='')
     def Seek(self, offset):
-        status = sb_wrapper._status  # lms.get_playing_info()
-        current = float(status['time'])
-        end = float(status['duration'])
-        offset = float(offset) / 1000000
-        if current + offset <= end:
-            position = current + offset
-            if position < 0:
-                position = 0
-            lms.set_position(position)
-            self.Seeked(position * 1000000)
+        lms.seek(offset/1000000)
         return
 
     @dbus.service.method(__player_interface, in_signature='ox', out_signature='')
     def SetPosition(self, trackid, position):
-        song = sb_wrapper._status  # lms.get_playing_info()
+        # lms.get_playing_info()
+
+        song = sb_wrapper._status['playlist_loop'][int(sb_wrapper._status['playlist_cur_index'])]
         if trackid != dbus.ObjectPath(
-                '/org/mpris/MediaPlayer2/Track/%s'
-                % dbus_encode_id(song['id'])
+                '/org/mpris/MediaPlayer2/Track/%s' % dbus_encode_id(song['id'])
         ):
             return
-        # Convert position to seconds
+
         position = float(position) / 1000000
-        logger.debug("SetPosition: %i, %i" % (position, int(song['time'])))
-        if position <= int(song['time']):
+        if 0 <= position and position <= song['duration']:
             lms.set_position(position)
-            self.Seeked(int(position * 1000000))
+        else:
+            logger.debug(
+                f'SetPosition {position} out of range [0, {song["duration"]}]'
+            )
         return
 
     @dbus.service.signal(__player_interface, signature='x')
@@ -955,10 +950,7 @@ class LMSConnection:
         return self.query(self.player_id, "time", pos)
 
     def seek(self, pos):
-        if pos >= 0:
-            return self.query(self.player_id, "time", "+%d" % pos)
-        else:
-            return self.query(self.player_id, "time", "-%d" % pos)
+        return self.query(self.player_id, "time", "%+.6f" % pos)
 
     def set_repeat(self, num):
         # 0 no repeat, 1 repeat song, 2 repeat playlist.
