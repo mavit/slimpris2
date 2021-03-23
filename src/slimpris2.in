@@ -209,12 +209,10 @@ MPRIS2_INTROSPECTION = \
     <method name="GoTo">
       <arg direction="in" name="TrackId" type="o"/>
     </method>
-<!--
     <signal name="TrackListReplaced">
       <arg name="Tracks" type="ao"/>
       <arg name="CurrentTrack" type="o"/>
     </signal>
--->
     <property name="Tracks" type="ao" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
     </property>
@@ -401,6 +399,7 @@ class SBWrapper():
                     'org.mpris.MediaPlayer2.TrackList',
                     'Tracks'
                 )
+                self._dbus_service.update_tracklist()
                 for prop in ['CanGoNext', 'CanGoPrevious', 'CanPlay']:
                     self._dbus_service.update_property(
                         'org.mpris.MediaPlayer2.Player',
@@ -605,6 +604,14 @@ class MPRISInterface(dbus.service.Object):
                 )
         return dbus.Array(tracklist, signature="o")
 
+    @staticmethod
+    def __get_current_track():
+        status = sb_wrapper._status
+        track = status['playlist_loop'][int(status['playlist_cur_index'])]
+        return dbus.ObjectPath(
+            '/org/mpris/MediaPlayer2/Track/%s' % dbus_encode_id(track['id'])
+        )
+
     __tracklist_interface = "org.mpris.MediaPlayer2.TrackList"
     __tracklist_props = {
         "Tracks": (__get_tracklist, None),
@@ -661,6 +668,12 @@ class MPRISInterface(dbus.service.Object):
         self.PropertiesChanged(interface, {prop: value}, [])
         return value
 
+    def update_tracklist(self):
+        self.TrackListReplaced(
+            self.__tracklist_props['Tracks'][0](),
+            self.__get_current_track(),
+        )
+
     # Root methods
     @dbus.service.method(__root_interface, in_signature='', out_signature='')
     def Raise(self):
@@ -716,18 +729,17 @@ class MPRISInterface(dbus.service.Object):
     def SetPosition(self, trackid, position):
         # lms.get_playing_info()
 
-        song = sb_wrapper._status['playlist_loop'][int(sb_wrapper._status['playlist_cur_index'])]
-        if trackid != dbus.ObjectPath(
-                '/org/mpris/MediaPlayer2/Track/%s' % dbus_encode_id(song['id'])
-        ):
+        if trackid != self.__get_current_track():
             return
 
         position = float(position) / 1000000
-        if 0 <= position and position <= song['duration']:
+        status = sb_wrapper._status
+        track = status['playlist_loop'][int(status['playlist_cur_index'])]
+        if 0 <= position and position <= track['duration']:
             lms.set_position(position)
         else:
             logger.debug(
-                f'SetPosition {position} out of range [0, {song["duration"]}]'
+                f'SetPosition {position} out of range [0, {track["duration"]}]'
             )
         return
 
@@ -777,12 +789,10 @@ class MPRISInterface(dbus.service.Object):
                 lms.playlist_goto(int(track['playlist index']))
         return
 
-    # FIXME: wrong signature compared to spec.
-    # FIXME: this is never called.
-    @dbus.service.signal(__tracklist_interface, signature='ao')
-    def TrackListReplaced(self, tracklist):
-        logger.debug("Tracklist replaced: %s", tracklist)
-        return tracklist
+    @dbus.service.signal(__tracklist_interface, signature='aoo')
+    def TrackListReplaced(self, tracks, current_track):
+        logger.debug("Tracklist replaced: %s", tracks)
+        return
 
 # Handle signals more gracefully
 
