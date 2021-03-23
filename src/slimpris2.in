@@ -469,12 +469,13 @@ class MPRISInterface(dbus.service.Object):
             raise dbus.exceptions.DBusException("Loop mode not supported")
         return
 
-    # FIXME:
     def __get_loop_status():
         # if lms.get_repeat() == '0':
-        if sb_wrapper._status['playlist repeat'] == '2':
+
+        playlist_repeat = int(sb_wrapper._status['playlist repeat'])
+        if playlist_repeat == 2:
             return "Playlist"
-        elif sb_wrapper._status['playlist repeat'] == '1':
+        elif playlist_repeat == 1:
             return "Track"
         else:
             return "None"
