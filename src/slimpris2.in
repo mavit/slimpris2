@@ -764,7 +764,7 @@ class MPRISInterface(dbus.service.Object):
 
     @dbus.service.signal(__tracklist_interface, signature='ao')
     def TrackListReplaced(self, tracklist):
-        logging.debug("Tracklist replaced: %s", tracklist)
+        logger.debug("Tracklist replaced: %s", tracklist)
         return tracklist
 
 # Handle signals more gracefully
@@ -1038,11 +1038,11 @@ class JSONConnection(LMSConnection):
         try:
             response = urllib.request.urlopen(req)
         except urllib.error.HTTPError as error:
-            logging.error("%s. Query was %s", error.reason, list(args))
+            logger.error("%s. Query was %s", error.reason, list(args))
             return
         response_txt = response.read()
         result = simplejson.loads(response_txt)['result']
-        logging.debug("query: %s, result: %s", list(args), result)
+        logger.debug("query: %s, result: %s", list(args), result)
         return result
 
 
@@ -1285,10 +1285,10 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
                                                      'insecure_https')
 
     if config.has_option('Connection', 'username') and not config.has_option('Connection', 'password'):
-        logging.warn(
+        logger.warn(
             "A username, '%s', is set, but there is no corresponding password", params['username'])
     elif config.has_option('Connection', 'password') and not config.has_option('Connection', 'username'):
-        logging.warn(
+        logger.warn(
             "A password is set, but there is no corresponding username")
 
     if len(args) == 3 and args[1].isdigit():
