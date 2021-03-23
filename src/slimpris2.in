@@ -1281,8 +1281,8 @@ if __name__ == '__main__':
     try:
         (opts, args) = getopt.getopt(sys.argv[
             1:], 'hdV', ['help', 'debug', 'version'])
-    except getopt.GetoptError as xxx_todo_changeme:
-        (msg, opt) = xxx_todo_changeme.args
+    except getopt.GetoptError as e:
+        (msg, opt) = e
         print(sys.argv[0] + ': ' + msg)
         print()
         usage(params)
