@@ -486,7 +486,6 @@ class MPRISInterface(dbus.service.Object):
 
     def __get_shuffle():
         # if lms.get_shuffle() == '0':
-        logger.debug(f"__get_shuffle: {sb_wrapper._status}")
         return bool(int(sb_wrapper._status['playlist shuffle']))
 
     def __get_metadata():
