@@ -199,6 +199,22 @@ MPRIS2_INTROSPECTION = \
     </property>
   </interface>
   <interface name="org.mpris.MediaPlayer2.TrackList">
+    <method name="GetTracksMetadata">
+      <arg direction="in" name="TrackIds" type="ao"/>
+      <arg direction="out" name="Metadata" type="aa{sv}"/>
+    </method>
+    <method name="RemoveTrack">
+      <arg direction="in" name="TrackId" type="o"/>
+    </method>
+    <method name="GoTo">
+      <arg direction="in" name="TrackId" type="o"/>
+    </method>
+<!--
+    <signal name="TrackListReplaced">
+      <arg name="Tracks" type="ao"/>
+      <arg name="CurrentTrack" type="o"/>
+    </signal>
+-->
     <property name="Tracks" type="ao" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
     </property>
@@ -592,7 +608,7 @@ class MPRISInterface(dbus.service.Object):
     __tracklist_interface = "org.mpris.MediaPlayer2.TrackList"
     __tracklist_props = {
         "Tracks": (__get_tracklist, None),
-        "CanEditTracks": (False, None),
+        "CanEditTracks": (True, None),
     }
 
     __prop_mapping = {
@@ -738,6 +754,7 @@ class MPRISInterface(dbus.service.Object):
             )
         return dbus.Array(metadata, signature="a{sv}")
 
+    # FIXME: implement this.  Remember to add associated XML.
     # @dbus.service.method(__tracklist_interface, in_signature='sob', out_signature='')
     # def AddTrack(self, uri, after_track, set_as_current):
     #     return
@@ -760,6 +777,8 @@ class MPRISInterface(dbus.service.Object):
                 lms.playlist_goto(int(track['playlist index']))
         return
 
+    # FIXME: wrong signature compared to spec.
+    # FIXME: this is never called.
     @dbus.service.signal(__tracklist_interface, signature='ao')
     def TrackListReplaced(self, tracklist):
         logger.debug("Tracklist replaced: %s", tracklist)
