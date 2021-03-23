@@ -51,7 +51,7 @@ install -m 0644 -p -D %{buildroot}/%{_docdir}/%{name}/%{name}.conf \
 %doc src/%{name}.conf
 %license COPYING
 %{_bindir}/%{name}
-%{_datadir}/applications/org.mpris.MediaPlayer2.squeezebox.desktop
+%{_datadir}/applications/io.github.mavit.slimpris2.desktop
 %{_datadir}/dbus-1/services/org.mpris.MediaPlayer2.squeezebox.service
 %{_datadir}/locale/*/LC_MESSAGES/%{name}.mo
 %{_userpresetdir}/80-%{name}.preset

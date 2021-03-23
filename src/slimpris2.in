@@ -52,7 +52,7 @@ gettext.bindtextdomain('slimpris2', '@datadir@/locale')
 gettext.textdomain('slimpris2')
 _ = gettext.gettext
 
-identity = "Squeezebox"
+application_id = "io.github.mavit.slimpris2"
 params = {
     'scheme': 'http',
     'host': 'localhost',
@@ -437,8 +437,9 @@ class SBWrapper():
 class MPRISInterface(dbus.service.Object):
     ''' The base object of an MPRIS player '''
 
-    __name = "org.mpris.MediaPlayer2.squeezebox"
     __path = "/org/mpris/MediaPlayer2"
+    __root_interface = "org.mpris.MediaPlayer2"
+    __name = f"{__root_interface}.Squeezebox"
     __introspect_interface = "org.freedesktop.DBus.Introspectable"
     __prop_interface = dbus.PROPERTIES_IFACE
 
@@ -454,15 +455,14 @@ class MPRISInterface(dbus.service.Object):
     def release_name(self):
         del self._bus_name
 
-    __root_interface = "org.mpris.MediaPlayer2"
     __root_props = {
         "CanQuit": (False, None),
         "CanRaise": (False, None),
         "Fullscreen": (False, None),
         "CanSetFullscreen": (False, None),
-        "DesktopEntry": (__name, None),
+        "DesktopEntry": (application_id, None),
         "HasTrackList": (True, None),
-        "Identity": (identity, None),
+        "Identity": ("Squeezebox remote control", None),
         "SupportedUriSchemes": (dbus.Array(signature="s"), None),
         "SupportedMimeTypes": (dbus.Array(signature="s"), None)
     }
@@ -572,7 +572,7 @@ class MPRISInterface(dbus.service.Object):
                 return True
         return False
 
-    __player_interface = "org.mpris.MediaPlayer2.Player"
+    __player_interface = f"{__root_interface}.Player"
     __player_props = {
         "PlaybackStatus": (__get_playback_status, None),
         "LoopStatus": (__get_loop_status, __set_loop_status),
@@ -591,30 +591,23 @@ class MPRISInterface(dbus.service.Object):
         "CanControl": (True, None),
     }
 
-    def __get_tracklist():
+    def __get_tracks():
         status = sb_wrapper._status
         tracklist = []
         if 'playlist_loop' in status:
             for track in status['playlist_loop']:
-                tracklist.append(
-                    dbus.ObjectPath(
-                        "/org/mpris/MediaPlayer2/TrackList/%s"
-                        % dbus_encode_id(track['id'])
-                    )
-                )
+                tracklist.append(mpris_track_id(track['id']))
         return dbus.Array(tracklist, signature="o")
 
     @staticmethod
     def __get_current_track():
         status = sb_wrapper._status
         track = status['playlist_loop'][int(status['playlist_cur_index'])]
-        return dbus.ObjectPath(
-            '/org/mpris/MediaPlayer2/Track/%s' % dbus_encode_id(track['id'])
-        )
+        return mpris_track_id(track['id'])
 
-    __tracklist_interface = "org.mpris.MediaPlayer2.TrackList"
+    __tracklist_interface = f"{__root_interface}.TrackList"
     __tracklist_props = {
-        "Tracks": (__get_tracklist, None),
+        "Tracks": (__get_tracks, None),
         "CanEditTracks": (True, None),
     }
 
@@ -810,6 +803,11 @@ def dbus_decode_id(string):
     return int(string.replace('_', '-'))
 
 
+def mpris_track_id(track_id):
+    return dbus.ObjectPath(
+        f"/{application_id.replace('.', '/')}/{dbus_encode_id(track_id)}"
+    )
+
 def format_metadata(data, context):
     """http://xmms2.org/wiki/MPRIS_Metadata"""
 
@@ -820,10 +818,7 @@ def format_metadata(data, context):
             metadata[key] = item[key]
 
     if 'id' in metadata:
-        metadata['mpris:trackid'] = dbus.ObjectPath(
-            "/org/mpris/MediaPlayer2/%s/%s" %
-            (context, dbus_encode_id(metadata['id']))
-        )
+        metadata['mpris:trackid'] = mpris_track_id(metadata['id'])
 
     if 'duration' in metadata:
         metadata['mpris:length'] = float(metadata['duration']) * 1000000

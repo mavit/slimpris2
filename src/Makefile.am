@@ -2,7 +2,7 @@ desktopdir = ${datadir}/applications/
 dbusdir = ${datadir}/dbus-1/services/
 
 dist_bin_SCRIPTS = slimpris2
-dist_desktop_DATA = org.mpris.MediaPlayer2.squeezebox.desktop
+dist_desktop_DATA = io.github.mavit.slimpris2.desktop
 dist_doc_DATA = slimpris2.conf
 nodist_dbus_DATA = org.mpris.MediaPlayer2.squeezebox.service
 
@@ -29,5 +29,5 @@ slimpris2: slimpris2.in
 
 test: test-desktop
 
-test-desktop: org.mpris.MediaPlayer2.squeezebox.desktop
+test-desktop: io.github.mavit.slimpris2.desktop
 	desktop-file-validate $<
