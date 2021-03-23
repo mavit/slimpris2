@@ -771,8 +771,8 @@ class MPRISInterface(dbus.service.Object):
 
 
 def handle_sigint(signum, frame):
-    logger.debug('Caught SIGINT, exiting.')
-    loop.quit()
+    logger.debug(f'{signal.strsignal(signum)}.  Disconnecting.')
+    lms.disconnect()
 
 
 def dbus_encode_id(track_id):
@@ -1121,6 +1121,16 @@ class CometConnection(JSONConnection):
         }])
         return False
 
+    def disconnect(self):
+        self.send_comet_requests([{
+            'channel': f'/meta/disconnect',
+            'clientId': self.comet_client_id,
+            'id': self.get_comet_id(),
+        }])
+        self.comet_url = None
+        GLib.timeout_add_seconds(10, loop.quit)
+        return False
+
     def send_comet_requests(self, requests):
         message = Soup.Message.new(
             "POST",
@@ -1136,9 +1146,10 @@ class CometConnection(JSONConnection):
         )
 
     def retry(self, message):
-        self.session.send_async(
-            message, None, self.receive_comet_responses, message
-        )
+        if self.comet_url:
+            self.session.send_async(
+                message, None, self.receive_comet_responses, message
+            )
         return False
 
     def receive_comet_responses(self, session, result, message):
@@ -1191,10 +1202,11 @@ class CometConnection(JSONConnection):
                     logger.critical(f"Subscription failed: {msg}")
                     raise CometError(msg)
             elif msg['channel'] == '/meta/connect':
-                GLib.timeout_add_seconds(
-                    math.ceil(int(msg['advice']['interval'])/1000),
-                    self.connect,
-                )
+                if self.comet_url:
+                    GLib.timeout_add_seconds(
+                        math.ceil(int(msg['advice']['interval'])/1000),
+                        self.connect,
+                    )
                 if msg['successful']:
                     None
                 else:
@@ -1204,6 +1216,10 @@ class CometConnection(JSONConnection):
                     msg['channel']
             ):
                 sb_wrapper.monitor(msg['data'])
+            elif msg['channel'] == '/meta/disconnect':
+                if not msg['successful']:
+                    logger.critical(f"Disconnection failed: {msg}")
+                loop.quit()
             else:
                 logger.warn(f"Unexpected comet response: {msg}")
 
@@ -1318,6 +1334,7 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
 
     loop = GLib.MainLoop()
     signal.signal(signal.SIGINT, handle_sigint)
+    signal.signal(signal.SIGTERM, handle_sigint)
 
     # Used to communicate with LMS
     lms = CometConnection(params)
