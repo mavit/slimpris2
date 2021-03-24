@@ -227,6 +227,11 @@ MPRIS2_INTROSPECTION = \
 
 # Wrapper to handle socket errors and similar
 class SBWrapper():
+    # By how many seconds can the time step by before we consider a seek
+    # to have happened?  Needs to be long enough to account for
+    # scheduling and network jitter, but small enough that the user
+    # won't notice and/or care that they're being shown the wrong time.
+    seek_tolerance = 1.0
 
     def __init__(self, params):
         self.sc = None
@@ -367,11 +372,14 @@ class SBWrapper():
                 )
 
             if self._status['mode'] != 'stop' and old_status['mode'] != 'stop':
-                # FIXME: won't this trigger too often?
-                if (abs(self._position - old_position) > 2 and
-                    old_status['playlist_cur_index'] == self._status['playlist_cur_index']) or \
-                   old_status['playlist_cur_index'] == '-1':
-                    self._dbus_service.Seeked(self._position * 1000000)
+                if int(old_status['playlist_cur_index']) == -1 \
+                   or (old_status['playlist_cur_index']
+                       == self._status['playlist_cur_index']):
+                    expected_delta = self._status['last_fetch'] \
+                        - old_status['last_fetch']
+                    actual_delta = self._position - old_position
+                    if abs(actual_delta - expected_delta) > self.seek_tolerance:
+                        self._dbus_service.Seeked(self._position * 1000000)
 
             if old_status['mixer volume'] != self._status['mixer volume']:
                 self._dbus_service.update_property(
