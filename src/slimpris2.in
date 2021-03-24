@@ -473,7 +473,7 @@ class MPRISInterface(dbus.service.Object):
         del self._bus_name
 
     def __get_identity():
-        return lms.player_id
+        return lms.player_name
 
     __root_props = {
         "CanQuit": (False, None),
@@ -1046,7 +1046,6 @@ class JSONConnection(LMSConnection):
         if 'password' in params:
             self.password = params['password']
         self.jsonrpc_url = f"{self.scheme}://{self.host}:{self.port}/jsonrpc.js"
-        self.player_id = params['mac']
         if 'insecure_https' in params:
             self.insecure_https = params['insecure_https']
 
@@ -1068,6 +1067,13 @@ class JSONConnection(LMSConnection):
 
         opener = urllib.request.build_opener(*handlers)
         urllib.request.install_opener(opener)
+
+        if 'player_id' in params:
+            self.player_id = params['player_id']
+        else:
+            self.player_id = self.query(None, 'player', 'id', 0, '?')['_id']
+
+        self.player_name = self.query(self.player_id, 'name', '?')['_value']
 
     def get_coverart_url(self, track_id, size=None):
 
@@ -1291,7 +1297,7 @@ class CometError(Exception):
 
 def usage(params):
     print("""\
-Usage: %(progname)s [OPTION]... [LMS_HOST LMS_PORT PLAYER]
+Usage: %(progname)s [OPTION]... [LMS_HOST LMS_PORT [PLAYER]]
 
      -d, --debug            Run in debug mode
 
@@ -1348,9 +1354,9 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
     if config.has_option('Connection', 'port'):
         params['port'] = config.get('Connection', 'port')
     if config.has_option('Connection', 'mac'):
-        params['mac'] = config.get('Connection', 'mac')
+        params['player_id'] = config.get('Connection', 'mac')
     if config.has_option('Connection', 'player'):
-        params['mac'] = config.get('Connection', 'player')
+        params['player_id'] = config.get('Connection', 'player')
     if config.has_option('Connection', 'username'):
         params['username'] = config.get('Connection', 'username')
     if config.has_option('Connection', 'password'):
@@ -1366,22 +1372,20 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
         logger.warning(
             "A password is set, but there is no corresponding username")
 
-    if len(args) == 3 and args[1].isdigit():
+    if 2 <= len(args) and len(args) <= 3 and args[1].isdigit():
         params['host'] = args[0]
         params['port'] = int(args[1])
-        params['mac'] = args[2]
+        if len(args) == 3:
+            params['player_id'] = args[2]
     elif len(args) == 0:
         pass
     else:
         usage(params)
         sys.exit(2)
 
-    if 'mac' not in params or params['mac'] == '':
-        logger.fatal("No player name or MAC address specified either in the config file or on the command line")
-        sys.exit(2)
-
-    if re.search(r'^(?:\d\d.){5}\d\d$', params['mac']):
-        params['mac'] = params['mac'].replace('-', ':')
+    if 'player_id' in params:
+        if re.search(r'^(?:\d\d.){5}\d\d$', params['player_id']):
+            params['player_id'] = params['player_id'].replace('-', ':')
 
     for bling in ['mmkeys']:
         if config.has_option('Bling', bling):

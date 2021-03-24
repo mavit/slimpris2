@@ -32,6 +32,6 @@ By default, `slimpris2` will try to connect to LMS at `localhost:9000`.
 
 To set a different host or port, copy the example configuration file `/usr/[local]/share/doc/slimpris2/slimpris2.conf` to `~/.config/slimpris2/slimpris2.conf`.
 
-Youʼll also want to specify the name or MAC address of the player you want to control.
+If you have more than one non-synced player attached to your LMS, youʼll also want to specify the name or MAC address of the particular player you want to control.
 
 Restart your session or `slimpris2` after changing `slimpris2.conf`.
