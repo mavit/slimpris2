@@ -4,7 +4,7 @@ Description=Squeezebox MPRIS remote control
 [Service]
 Type=dbus
 ExecStart=@bindir@/slimpris2
-BusName=org.mpris.MediaPlayer2.squeezebox
+BusName=org.mpris.MediaPlayer2.slimpris2
 Restart=on-failure
 
 [Install]

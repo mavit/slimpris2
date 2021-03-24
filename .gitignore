@@ -7,7 +7,7 @@ install-sh
 missing
 aclocal.m4
 autom4te.cache
-org.mpris.MediaPlayer2.squeezebox.service
+org.mpris.MediaPlayer2.slimpris2.service
 slimpris2.service
 POTFILES
 *.gmo

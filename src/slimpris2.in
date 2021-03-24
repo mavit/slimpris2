@@ -48,11 +48,13 @@ gi.require_version('Soup', '2.4')
 from gi.repository import GLib, Gio, Soup
 
 
-gettext.bindtextdomain('slimpris2', '@datadir@/locale')
-gettext.textdomain('slimpris2')
+app_name = "slimpris2"
+app_id = f"io.github.mavit.{app_name}"
+
+gettext.bindtextdomain(app_name, '@datadir@/locale')
+gettext.textdomain(app_name)
 _ = gettext.gettext
 
-application_id = "io.github.mavit.slimpris2"
 params = {
     'scheme': 'http',
     'host': 'localhost',
@@ -439,7 +441,7 @@ class MPRISInterface(dbus.service.Object):
 
     __path = "/org/mpris/MediaPlayer2"
     __root_interface = "org.mpris.MediaPlayer2"
-    __name = f"{__root_interface}.Squeezebox"
+    __name = f"{__root_interface}.{app_name}"
     __introspect_interface = "org.freedesktop.DBus.Introspectable"
     __prop_interface = dbus.PROPERTIES_IFACE
 
@@ -460,7 +462,7 @@ class MPRISInterface(dbus.service.Object):
         "CanRaise": (False, None),
         "Fullscreen": (False, None),
         "CanSetFullscreen": (False, None),
-        "DesktopEntry": (application_id, None),
+        "DesktopEntry": (app_id, None),
         "HasTrackList": (True, None),
         "Identity": ("Squeezebox remote control", None),
         "SupportedUriSchemes": (dbus.Array(signature="s"), None),
@@ -802,14 +804,14 @@ def dbus_decode_id(string):
 
 def mpris_track_id_to_object_path(track_id):
     return dbus.ObjectPath(
-        f"/{application_id.replace('.', '/')}/{dbus_encode_id(track_id)}"
+        f"/{app_id.replace('.', '/')}/{dbus_encode_id(track_id)}"
     )
 
 
 def mpris_track_object_path_to_id(object_path):
     return dbus_decode_id(
         str(object_path).replace(
-            f"/{application_id.replace('.', '/')}/", ''
+            f"/{app_id.replace('.', '/')}/", ''
         )
     )
 
@@ -1064,7 +1066,10 @@ class JSONConnection(LMSConnection):
         req = urllib.request.Request(self.jsonrpc_url, params.encode('utf8'))
         req.add_header(
             'User-Agent',
-            'slimpris2/@VERSION@ Python-urllib/%d.%d' % sys.version_info[:2]
+            '%s/@VERSION@ Python-urllib/%d.%d' % (
+                app_name,
+                *sys.version_info[:2],
+            )
         )
 
         try:
@@ -1088,7 +1093,7 @@ class CometConnection(JSONConnection):
 
     def run(self):
         self.session = Soup.Session()
-        self.session.props.user_agent = "slimpris2/@VERSION@ "
+        self.session.props.user_agent = f"{app_name}/@VERSION@ "
         if logger.isEnabledFor(logging.DEBUG):
             self.session.add_feature(
                 Soup.Logger.new(Soup.LoggerLogLevel.BODY, 1024)
@@ -1308,11 +1313,13 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
             log_level = logging.DEBUG
 
     logging.basicConfig(format=log_format, level=log_level)
-    logger = logging.getLogger('slimpris2')
+    logger = logging.getLogger(app_name)
 
     config = six.moves.configparser.ConfigParser()
-    config.read(['/etc/slimpris2.conf',
-                 os.path.expanduser('~/.config/slimpris2/slimpris2.conf')])
+    config.read([
+        f'/etc/{app_name}.conf',
+        os.path.expanduser(f'~/.config/{app_name}/{app_name}.conf')
+    ])
 
     if config.has_option('Connection', 'scheme'):
         params['scheme'] = config.get('Connection', 'scheme')
