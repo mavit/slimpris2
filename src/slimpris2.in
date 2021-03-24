@@ -205,6 +205,13 @@ MPRIS2_INTROSPECTION = \
       <arg direction="in" name="TrackIds" type="ao"/>
       <arg direction="out" name="Metadata" type="aa{sv}"/>
     </method>
+<!--
+    <method name="AddTrack">
+      <arg direction="in" name="Uri" type="s"/>
+      <arg direction="in" name="AfterTrack" type="o"/>
+      <arg direction="in" name="SetAsCurrent" type="b"/>
+    </method>
+-->
     <method name="RemoveTrack">
       <arg direction="in" name="TrackId" type="o"/>
     </method>
@@ -770,8 +777,10 @@ class MPRISInterface(dbus.service.Object):
             )
         return dbus.Array(metadata, signature="a{sv}")
 
-    # FIXME: implement this.  Remember to add associated XML.
-    # @dbus.service.method(__tracklist_interface, in_signature='sob', out_signature='')
+    # # Worth implementing?  https://github.com/mavit/slimpris2/issues/14
+    # @dbus.service.method(
+    #     __tracklist_interface, in_signature='sob', out_signature=''
+    # )
     # def AddTrack(self, uri, after_track, set_as_current):
     #     return
 
