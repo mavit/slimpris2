@@ -472,6 +472,9 @@ class MPRISInterface(dbus.service.Object):
     def release_name(self):
         del self._bus_name
 
+    def __get_identity():
+        return lms.player_id
+
     __root_props = {
         "CanQuit": (False, None),
         "CanRaise": (False, None),
@@ -479,7 +482,7 @@ class MPRISInterface(dbus.service.Object):
         "CanSetFullscreen": (False, None),
         "DesktopEntry": (app_id, None),
         "HasTrackList": (True, None),
-        "Identity": ("Squeezebox remote control", None),
+        "Identity": (__get_identity, None),
         "SupportedUriSchemes": (dbus.Array(signature="s"), None),
         "SupportedMimeTypes": (dbus.Array(signature="s"), None)
     }
