@@ -273,6 +273,7 @@ class SBWrapper():
     def my_connect(self):
         """ Init LMS connection """
         try:
+            lms.detect()
             lms.get_playing_info()
 
             # Export our DBUS service
@@ -1070,10 +1071,11 @@ class JSONConnection(LMSConnection):
 
         if 'player_id' in params:
             self.player_id = params['player_id']
-        else:
-            self.player_id = self.query(None, 'player', 'id', 0, '?')['_id']
 
-        self.player_name = self.query(self.player_id, 'name', '?')['_value']
+    def detect(self):
+        if not hasattr(self, 'player'):
+            lms.player_id = lms.query(None, 'player', 'id', 0, '?')['_id']
+        lms.player_name = lms.query(self.player_id, 'name', '?')['_value']
 
     def get_coverart_url(self, track_id, size=None):
 
