@@ -1183,13 +1183,16 @@ class CometConnection(JSONConnection):
         return False
 
     def disconnect(self):
-        self.send_comet_requests([{
-            'channel': f'/meta/disconnect',
-            'clientId': self.comet_client_id,
-            'id': self.get_comet_id(),
-        }])
-        self.comet_url = None
-        GLib.timeout_add_seconds(10, loop.quit)
+        if hasattr(self, 'comet_client_id'):
+            self.send_comet_requests([{
+                'channel': f'/meta/disconnect',
+                'clientId': self.comet_client_id,
+                'id': self.get_comet_id(),
+            }])
+            self.comet_url = None
+            GLib.timeout_add_seconds(10, loop.quit)
+        else:
+            loop.quit()
         return False
 
     def send_comet_requests(self, requests):
