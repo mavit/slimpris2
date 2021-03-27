@@ -1073,7 +1073,7 @@ class JSONConnection(LMSConnection):
             self.player_id = params['player_id']
 
     def detect(self):
-        if not hasattr(self, 'player'):
+        if not hasattr(self, 'player_id'):
             lms.player_id = lms.query(None, 'player', 'id', 0, '?')['_id']
         lms.player_name = lms.query(self.player_id, 'name', '?')['_value']
 
