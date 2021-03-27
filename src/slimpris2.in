@@ -124,7 +124,9 @@ MPRIS2_INTROSPECTION = \
     <method name="Raise"/>
     <method name="Quit"/>
     <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
-    <property name="CanQuit" type="b" access="read"/>
+    <property name="CanQuit" type="b" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+    </property>
     <property name="Fullscreen" type="b" access="read"/>
     <property name="CanSetFullscreen" type="b" access="read"/>
     <property name="CanRaise" type="b" access="read"/>
@@ -393,6 +395,11 @@ class SBWrapper():
                 self._dbus_service.update_property(
                     'org.mpris.MediaPlayer2.Player', 'Volume')
 
+            if old_status['power'] != self._status['power']:
+                self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2', 'CanQuit'
+                )
+
             if old_status['mode'] != self._status['mode']:
                 self._dbus_service.update_property(
                     'org.mpris.MediaPlayer2.Player', 'PlaybackStatus')
@@ -473,11 +480,14 @@ class MPRISInterface(dbus.service.Object):
     def release_name(self):
         del self._bus_name
 
+    def __can_quit():
+        return bool(int(sb_wrapper._status['power']))
+
     def __get_identity():
         return lms.player_name
 
     __root_props = {
-        "CanQuit": (False, None),
+        "CanQuit": (__can_quit, None),
         "CanRaise": (False, None),
         "Fullscreen": (False, None),
         "CanSetFullscreen": (False, None),
@@ -689,12 +699,14 @@ class MPRISInterface(dbus.service.Object):
         )
 
     # Root methods
+
     @dbus.service.method(__root_interface, in_signature='', out_signature='')
     def Raise(self):
         return
 
     @dbus.service.method(__root_interface, in_signature='', out_signature='')
     def Quit(self):
+        lms.power(0)
         return
 
     # Player methods
@@ -982,6 +994,9 @@ class LMSConnection:
 
     def stop(self):
         return self.query(self.player_id, "stop")
+
+    def power(self, off_on):
+        return self.query(self.player_id, "power", off_on)
 
     def __next__(self):
         return self.query(self.player_id, "playlist", "jump", "+1")
