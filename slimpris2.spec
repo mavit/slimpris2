@@ -1,5 +1,5 @@
 Name:                   slimpris2
-Version:                2.1.0
+Version:                2.1.1
 Release:                0.1%{?dist}
 Summary:                MPRIS remote control of Logitech Media Server
 
@@ -46,6 +46,7 @@ install -m 0644 -p -D %{buildroot}/%{_docdir}/%{name}/%{name}.conf \
 
 %files
 %config(noreplace) %{_sysconfdir}/%{name}.conf
+%doc %{_mandir}/*/*
 %doc AUTHORS
 %doc README.md
 %doc src/%{name}.conf

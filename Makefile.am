@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = src po
+SUBDIRS = doc src po
 dist_doc_DATA = README.md COPYING AUTHORS
 
 EXTRA_DIST = autogen.sh

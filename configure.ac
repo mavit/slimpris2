@@ -1,4 +1,4 @@
-AC_INIT(slimpris2, 2.1.0)
+AC_INIT(slimpris2, 2.1.1)
 AM_INIT_AUTOMAKE()
 AM_PATH_PYTHON([3.6])
 GETTEXT_PACKAGE=slimpris2
@@ -21,6 +21,7 @@ AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemduserunitdir"])
 
 AC_OUTPUT([
 Makefile
+doc/Makefile
 src/Makefile
 po/Makefile.in
 ])

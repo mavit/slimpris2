@@ -1,5 +1,6 @@
 [Unit]
 Description=Squeezebox MPRIS remote control
+Documentation=man:slimpris2.service(7)
 
 [Service]
 Type=dbus
