@@ -1,1 +1,1 @@
-*.py.in linguist-language=Python
+*.py.in diff=python linguist-language=Python
