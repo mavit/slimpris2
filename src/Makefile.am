@@ -17,6 +17,7 @@ CLEANFILES = org.mpris.MediaPlayer2.slimpris2.service slimpris2.service slimpris
 edit = sed \
 	-e 's|@bindir[@]|$(bindir)|g' \
 	-e 's|@datadir[@]|$(datadir)|g' \
+	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
 	-e 's|@PYTHON[@]|$(PYTHON)|g' \
 	-e 's|@VERSION[@]|$(VERSION)|g'
 

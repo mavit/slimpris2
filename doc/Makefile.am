@@ -5,9 +5,10 @@ man7_MANS = slimpris2.service.man
 CLEANFILES = $(MANS)
 
 edit = sed \
-	-e 's|@VERSION[@]|$(VERSION)|g'
+	-e 's|@VERSION[@]|$(VERSION)|g' \
+	-e 's|@sysconfdir[@]|$(sysconfdir)|g'
 
-%.man: %.md ../configure.ac
+%.man: %.md Makefile
 	rm -f $@ $@.tmp
 	$(edit) $< | pandoc --to=man --standalone --output=$@.tmp
 	chmod a-w $@.tmp

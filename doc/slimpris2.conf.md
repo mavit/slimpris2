@@ -32,7 +32,7 @@
 # FILES
 
 1. `~/.config/slimpris2/slimpris2.conf`
-1. `/etc/slimpris2.conf`
+1. `@sysconfdir@/slimpris2.conf`
 
 # SEE ALSO
 

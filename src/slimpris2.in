@@ -1363,7 +1363,7 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
 
     config = six.moves.configparser.ConfigParser()
     config.read([
-        f'/etc/{app_name}.conf',
+        f'@sysconfdir@/{app_name}.conf',
         os.path.expanduser(f'~/.config/{app_name}/{app_name}.conf')
     ])
 
