@@ -1282,13 +1282,21 @@ class CometConnection(JSONConnection):
                     logger.critical(f"Subscription failed: {msg}")
                     raise CometError(msg)
             elif msg['channel'] == '/meta/connect':
-                if self.comet_url:
+                if not msg['successful']:
+                    logger.warning(f"Connection failed: {msg}")
+                if msg['advice']['reconnect'] == 'none':
+                    logger.critical(f"The server advises us not to reconnect.")
+                    raise CometError(msg)
+                elif msg['advice']['reconnect'] == 'handshake':
+                    GLib.timeout_add_seconds(
+                        math.ceil(int(msg['advice']['interval'])/1000),
+                        self.handshake,
+                    )
+                elif self.comet_url:
                     GLib.timeout_add_seconds(
                         math.ceil(int(msg['advice']['interval'])/1000),
                         self.connect,
                     )
-                if not msg['successful']:
-                    logger.warning(f"Connection failed: {msg}")
             elif re.search(
                     f"^/{re.escape(self.comet_client_id)}/slim/status/{re.escape(self.player_id)}$",
                     msg['channel']
