@@ -21,7 +21,7 @@ edit = sed \
 	-e 's|@PYTHON[@]|$(PYTHON)|g' \
 	-e 's|@VERSION[@]|$(VERSION)|g'
 
-slimpris2: slimpris2.in Makefile
+slimpris2: slimpris2.py.in Makefile
 	rm -f $@ $@.tmp
 	$(edit) $< > $@.tmp
 	chmod +x,a-w $@.tmp
