@@ -43,6 +43,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import xdg.BaseDirectory
 
 gi.require_version('Soup', '2.4')
 from gi.repository import GLib, Gio, Soup
@@ -1362,10 +1363,13 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
     logger = logging.getLogger(app_name)
 
     config = six.moves.configparser.ConfigParser()
-    config.read([
-        f'@sysconfdir@/{app_name}.conf',
-        os.path.expanduser(f'~/.config/{app_name}/{app_name}.conf')
-    ])
+    config_filenames = [
+        f'{dir}/slimpris2.conf'
+        for dir in xdg.BaseDirectory.load_config_paths(app_name)
+    ]
+    config_filenames.append(f'@sysconfdir@/{app_name}.conf')
+    config_filenames.reverse()
+    config.read(config_filenames)
 
     if config.has_option('Connection', 'scheme'):
         params['scheme'] = config.get('Connection', 'scheme')

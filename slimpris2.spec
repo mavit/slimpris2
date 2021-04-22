@@ -18,6 +18,7 @@ BuildRequires:          systemd-rpm-macros
 
 Requires:               python3dist(dbus-python)
 Requires:               python3dist(pygobject)
+Requires:               python3dist(pyxdg)
 Requires:               python3dist(simplejson)
 Requires:               python3dist(six)
 

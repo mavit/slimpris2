@@ -32,7 +32,7 @@
 # FILES
 
 1. `@sysconfdir@/slimpris2.conf`
-1. `~/.config/slimpris2/slimpris2.conf`
+1. `$XDG_CONFIG_HOME/slimpris2/slimpris2.conf` or `~/.config/slimpris2/slimpris2.conf`
 
 Last takes precedence.
 
