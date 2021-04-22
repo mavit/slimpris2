@@ -1,6 +1,6 @@
 Name:                   slimpris2
 Version:                2.1.1
-Release:                0.1%{?dist}
+Release:                0.2%{?dist}
 Summary:                MPRIS remote control of Logitech Media Server
 
 License:                GPLv3
@@ -12,6 +12,7 @@ BuildRequires:          autoconf
 BuildRequires:          automake
 BuildRequires:          intltool
 BuildRequires:          make
+BuildRequires:          pandoc
 BuildRequires:          python3-devel
 BuildRequires:          systemd
 BuildRequires:          systemd-rpm-macros
