@@ -4,7 +4,11 @@ man7_MANS = slimpris2.service.man
 
 CLEANFILES = $(MANS)
 
-edit = sed -e 's|@VERSION[@]|$(VERSION)|g'
+edit = sed \
+	-e 's|@VERSION[@]|$(VERSION)|g'
 
-%.man: %.md
-	$(edit) $< | pandoc --to=man --standalone --output=$@
+%.man: %.md ../configure.ac
+	rm -f $@ $@.tmp
+	$(edit) $< | pandoc --to=man --standalone --output=$@.tmp
+	chmod a-w $@.tmp
+	mv $@.tmp $@

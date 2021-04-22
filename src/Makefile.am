@@ -14,18 +14,23 @@ endif
 EXTRA_DIST = org.mpris.MediaPlayer2.slimpris2.service.in slimpris2.service.in slimpris2.in
 CLEANFILES = org.mpris.MediaPlayer2.slimpris2.service slimpris2.service slimpris2.py slimpris2
 
-edit = sed -e 's|@bindir[@]|$(bindir)|g' \
-	   -e 's|@datadir[@]|$(datadir)|g' \
-	   -e 's|@PYTHON[@]|$(PYTHON)|g' \
-	   -e 's|@VERSION[@]|$(VERSION)|g'
+edit = sed \
+	-e 's|@bindir[@]|$(bindir)|g' \
+	-e 's|@datadir[@]|$(datadir)|g' \
+	-e 's|@PYTHON[@]|$(PYTHON)|g' \
+	-e 's|@VERSION[@]|$(VERSION)|g'
 
-slimpris2: slimpris2.in
-	$(edit) $< > $@
-	chmod +x $@
-	ln -sf $@ $@.py
+slimpris2: slimpris2.in Makefile
+	rm -f $@ $@.tmp
+	$(edit) $< > $@.tmp
+	chmod +x,a-w $@.tmp
+	mv $@.tmp $@
 
-%.service: %.service.in
-	$(edit) $< > $@
+%.service: %.service.in Makefile
+	rm -f $@ $@.tmp
+	$(edit) $< > $@.tmp
+	chmod a-w $@.tmp
+	mv $@.tmp $@
 
 test: test-desktop
 
