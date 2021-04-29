@@ -38,6 +38,7 @@ Restart your session or `slimpris2` after changing `slimpris2.conf`.
 
 ## Some examples of compatible remote controls
 
+- [BlueZ](http://www.bluez.org/) `mpris-proxy` for Bluetooth [AVRCP](https://en.wikipedia.org/wiki/List_of_Bluetooth_profiles#Audio/Video_Remote_Control_Profile_(AVRCP)) remote controls.
 - Gnome Shell [time and date drop-down](https://wiki.gnome.org/Projects/GnomeShell/CheatSheet#The_top_bar)
 - [GSConnect](https://github.com/GSConnect/gnome-shell-extension-gsconnect/wiki) for Android phones.
 - [`playerctl`](https://github.com/altdesktop/playerctl) from the command line.
