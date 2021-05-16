@@ -9,10 +9,10 @@
 # OPTIONS
 
 *hostname*
-: The hostname where LMS is running.  Defaults to `localhost` if not specified here or in the configuration file.
+: The hostname where LMS is running.  If not specified here or in the configuration file, auto-discovery will be attempted.
 
 *port*
-: The port number where LMS is running.  Defaults to `9000` if not specified here or in the configuration file.
+: The port number where LMS is running.
 
 *player*
 : The name or MAC address of the Squeezebox that you wish to control.  Defaults to the first connected if not specified here or in in the configuration file.

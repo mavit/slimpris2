@@ -10,7 +10,7 @@
 : Defaults to `http`.  LMS cannot currently use `https` unless it is behind a reverse proxy.
 
 *host*
-: The hostname where LMS is running.  Defaults to `localhost` if not specified here or on the command line.
+: The hostname where LMS is running.  If not specified here or on the command line, auto-discovery will be attempted.
 
 *port*
 : The port number where LMS is running.  Defaults to `9000` if not specified here or in the configuration file.

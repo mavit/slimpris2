@@ -28,9 +28,7 @@ Logout/login from your session.  Default prefix is `/usr/local`.
 
 ## Configuration
 
-By default, `slimpris2` will try to connect to LMS at `localhost:9000`.
-
-To set a different host or port, copy the example configuration file `/usr/[local]/share/doc/slimpris2/slimpris2.conf` to `~/.config/slimpris2/slimpris2.conf`.
+By default, `slimpris2` will auto-discover LMS on the local network.  To set a specific host or port, copy the example configuration file `/usr/[local]/share/doc/slimpris2/slimpris2.conf` to `~/.config/slimpris2/slimpris2.conf`.
 
 If you have more than one non-synced player attached to your LMS, youʼll also want to specify the name or MAC address of the particular player you want to control.
 

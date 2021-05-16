@@ -37,7 +37,9 @@ import simplejson
 import six
 import six.moves.configparser
 import six.moves.http_client
+import socket
 import ssl
+import struct
 import sys
 import time
 import urllib.error
@@ -58,8 +60,9 @@ _ = gettext.gettext
 
 params = {
     'scheme': 'http',
-    'host': 'localhost',
+    'host': None,
     'port': 9000,
+    'username': None,
     'password': None,
     'progname': sys.argv[0],
     'mmkeys': True,
@@ -271,12 +274,15 @@ class SBWrapper():
 
     def run(self):
         """ Try to connect to LMS """
-        GLib.timeout_add_seconds(0, self.my_connect)
+        GLib.timeout_add(0, self.my_connect)
 
     def my_connect(self):
         """ Init LMS connection """
         try:
-            lms.detect()
+            if self._params['host'] is None:
+                self.discover_lms()
+
+            lms.detect_player()
             lms.get_playing_info()
 
             # Export our DBUS service
@@ -298,11 +304,13 @@ class SBWrapper():
             self._errors = 0
             self._retry_period = 1
         except (
+                LMSDiscoveryError,
                 six.moves.http_client.BadStatusLine,
+                socket.timeout,
                 urllib.error.URLError
         ) as e:
             self._errors += 1
-            if self._errors < 6:
+            if self._errors <= 6:
                 logger.error('Could not connect to LMS: %s' % e)
             if self._errors == 6:
                 logger.info('Continue to connect but going silent')
@@ -312,6 +320,39 @@ class SBWrapper():
 
         # Return False to stop trying to connect
         return False
+
+    def discover_lms(self):
+        """Attempt to locate LMS on the local network"""
+        logger.debug("Sending discovery packet")
+        udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        udp_sock.sendto(
+            b'eNAME\0JSON\0UUID\0VERS\0',
+            ('255.255.255.255', 3483)
+        )
+
+        udp_sock.settimeout(self._retry_period)
+        (msg, (lms.host, _)) = udp_sock.recvfrom(1500)
+        logger.debug(f"Discovered LMS at {lms.host}")
+
+        if msg[0:1] == b'E':
+            msg = msg[1:]
+        else:
+            raise LMSDiscoveryError("Bad discovery packet")
+
+        length = len(msg)
+        while length > 0:
+            tag = msg[0:4]
+            (length2,) = struct.unpack("B", msg[4:5])
+            val = msg[5:5 + length2] if length2 else None
+
+            logger.debug(f"Discovery tag {tag}: {val}")
+            if tag == 'JSON':
+                lms.port = int(val)
+
+            msg = msg[length2 + 5:]
+            length = length - length2 - 5
+
 
     def reconnect(self):
         logger.warning("Disconnected")
@@ -1056,15 +1097,9 @@ class JSONConnection(LMSConnection):
         self.scheme = params['scheme']
         self.host = params['host']
         self.port = params['port']
-        self.username = None
-        self.password = None
-        if 'username' in params:
-            self.username = params['username']
-        if 'password' in params:
-            self.password = params['password']
-        self.jsonrpc_url = f"{self.scheme}://{self.host}:{self.port}/jsonrpc.js"
-        if 'insecure_https' in params:
-            self.insecure_https = params['insecure_https']
+        self.username = params['username']
+        self.password = params['password']
+        self.insecure_https = params['insecure_https']
 
         handlers = []
 
@@ -1072,7 +1107,7 @@ class JSONConnection(LMSConnection):
             context = ssl._create_unverified_context()
             handlers.append(urllib.request.HTTPSHandler(context=context))
 
-        if self.username and self.password:
+        if self.username is not None and self.password is not None:
             auth_handler = urllib.request.HTTPBasicAuthHandler()
             auth_handler.add_password(
                 realm='Logitech Media Server',
@@ -1088,15 +1123,14 @@ class JSONConnection(LMSConnection):
         if 'player_id' in params:
             self.player_id = params['player_id']
 
-    def detect(self):
+    def detect_player(self):
         if not hasattr(self, 'player_id'):
             lms.player_id = lms.query(None, 'player', 'id', 0, '?')['_id']
         lms.player_name = lms.query(self.player_id, 'name', '?')['_value']
 
     def get_coverart_url(self, track_id, size=None):
-
         login = ""
-        if self.username and self.password:
+        if self.username is not None and self.password is not None:
             login = "%s:%s@" % (self.username, self.password)
 
         if size:
@@ -1107,7 +1141,10 @@ class JSONConnection(LMSConnection):
     def query(self, player_id, *args):
         params = simplejson.dumps(
             {'id': 1, 'method': 'slim.request', 'params': [player_id, list(args)]})
-        req = urllib.request.Request(self.jsonrpc_url, params.encode('utf8'))
+        req = urllib.request.Request(
+            f"{self.scheme}://{self.host}:{self.port}/jsonrpc.js",
+            params.encode('utf8')
+        )
         req.add_header(
             'User-Agent',
             '%s/@VERSION@ Python-urllib/%d.%d' % (
@@ -1131,7 +1168,7 @@ class CometConnection(JSONConnection):
     def __init__(self, params):
         super().__init__(params)
 
-        self.comet_url = f"{self.scheme}://{self.host}:{self.port}/cometd/"
+        self.disconnecting = False
         self.comet_id = 0
         self.retry_period = 1
 
@@ -1205,7 +1242,7 @@ class CometConnection(JSONConnection):
                 'clientId': self.comet_client_id,
                 'id': self.get_comet_id(),
             }])
-            self.comet_url = None
+            self.disconnecting = True
             GLib.timeout_add_seconds(10, loop.quit)
         else:
             loop.quit()
@@ -1214,7 +1251,7 @@ class CometConnection(JSONConnection):
     def send_comet_requests(self, requests):
         message = Soup.Message.new(
             "POST",
-            self.comet_url + inspect.currentframe().f_back.f_code.co_name
+            f"{self.scheme}://{self.host}:{self.port}/cometd/{inspect.currentframe().f_back.f_code.co_name}",
         )
         message.set_request(
             'application/json; charset=UTF-8',
@@ -1226,7 +1263,7 @@ class CometConnection(JSONConnection):
         )
 
     def retry(self, message):
-        if self.comet_url:
+        if not self.disconnecting:
             self.session.send_async(
                 message, None, self.receive_comet_responses, message
             )
@@ -1294,7 +1331,7 @@ class CometConnection(JSONConnection):
                             self.handshake,
                         )
                         continue
-                if self.comet_url:
+                if not self.disconnecting:
                     GLib.timeout_add_seconds(
                         math.ceil(int(msg['advice']['interval'])/1000),
                         self.connect,
@@ -1326,6 +1363,11 @@ class CometError(Exception):
         self.message = message
 
 
+class LMSDiscoveryError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 def usage(params):
     print("""\
 Usage: %(progname)s [OPTION]... [LMS_HOST LMS_PORT [PLAYER]]
@@ -1341,8 +1383,15 @@ if __name__ == '__main__':
     path = ""
 
     try:
-        (opts, args) = getopt.getopt(sys.argv[
-            1:], 'hdV', ['help', 'debug', 'version'])
+        (opts, args) = getopt.getopt(
+            sys.argv[1:],
+            '?dDV', [
+                'debug',
+                'discover',
+                'help',
+                'version',
+            ]
+        )
     except getopt.GetoptError as e:
         (msg, opt) = e
         print(sys.argv[0] + ': ' + msg)
@@ -1354,10 +1403,12 @@ if __name__ == '__main__':
     log_level = logging.INFO
 
     for (opt, arg) in opts:
-        if opt in ['-h', '--help']:
+        if opt in ['-d', '--debug']:
+            log_level = logging.DEBUG
+        elif opt in ['-?', '--help']:
             usage(params)
             sys.exit()
-        if opt in ['-V', '--version']:
+        elif opt in ['-V', '--version']:
             print("""slimpris2 @VERSION@
 
 Copyright (C) 2011-2021 Peter Oliver, Bart Lauret, Jean-Philippe Braun.
@@ -1366,8 +1417,6 @@ and you are welcome to redistribute it under certain conditions.
 
 Report bugs to https://github.com/mavit/slimpris2/issues""")
             sys.exit()
-        elif opt in ['-d', '--debug']:
-            log_level = logging.DEBUG
 
     logging.basicConfig(format=log_format, level=log_level)
     logger = logging.getLogger(app_name)
@@ -1399,13 +1448,6 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
         params['insecure_https'] = config.getboolean('Connection',
                                                      'insecure_https')
 
-    if config.has_option('Connection', 'username') and not config.has_option('Connection', 'password'):
-        logger.warning(
-            "A username, '%s', is set, but there is no corresponding password", params['username'])
-    elif config.has_option('Connection', 'password') and not config.has_option('Connection', 'username'):
-        logger.warning(
-            "A password is set, but there is no corresponding username")
-
     if 2 <= len(args) and len(args) <= 3 and args[1].isdigit():
         params['host'] = args[0]
         params['port'] = int(args[1])
@@ -1424,6 +1466,25 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
     for bling in ['mmkeys']:
         if config.has_option('Bling', bling):
             params[bling] = config.getboolean('Bling', bling)
+
+    for (opt, arg) in opts:
+        if opt in ['-D', '--discover']:
+            params['host'] = None
+
+    if params['host'] is None and (
+            params['username'] is not None
+            or params['password'] is not None
+    ):
+        logger.warning("For safety, usernames and passwords are not supported with auto-discovery")
+    elif params['username'] is not None and params['password'] is None:
+        logger.warning(
+            "A username, '%s', is set, but there is no corresponding password",
+            params['username']
+        )
+    elif params['password'] is not None and params['username'] is None:
+        logger.warning(
+            "A password is set, but there is no corresponding username"
+        )
 
     loop = GLib.MainLoop()
     signal.signal(signal.SIGINT, handle_sigint)
