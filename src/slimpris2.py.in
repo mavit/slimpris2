@@ -1005,7 +1005,7 @@ class LMSConnection:
             "track_id:%s" % track_id
         )
 
-        return songinfo['songinfo_loop']
+        return songinfo['songinfo_loop'] if 'songinfo_loop' in songinfo else []
 
     def get_track_path(self):
         return self.query(self.player_id, "path", "?")['_path']
