@@ -585,7 +585,7 @@ class MPRISInterface(dbus.service.Object):
             return format_metadata([], "Track")
         if index >= 0:
             track = sb_wrapper._status['playlist_loop'][index]
-            if 'playcount' in track:
+            if 'playcount' in track or track['remote']:
                 # Comet gives us all the data we need.
                 metadata = [{k: v} for k, v in track.items()]
             else:
@@ -1001,7 +1001,7 @@ class LMSConnection:
         #path = self.get_track_path()
         songinfo = self.query(
             self.player_id, "songinfo", "0", None,
-            "tags:acdgijkKlmOtuwy",
+            "tags:acdgijkKlmOtuwxy",
             "track_id:%s" % track_id
         )
 
@@ -1216,7 +1216,7 @@ class CometConnection(JSONConnection):
                         "status",
                         "0",
                         None,
-                        "tags:acdgijkKlmOtuwy",
+                        "tags:acdgijkKlmOtuwxy",
                         "subscribe:0"
                     ],
                 ],
