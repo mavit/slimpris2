@@ -585,7 +585,7 @@ class MPRISInterface(dbus.service.Object):
             return format_metadata([], "Track")
         if index >= 0:
             track = sb_wrapper._status['playlist_loop'][index]
-            if 'playcount' in track or track['remote']:
+            if 'playcount' in track or ('remote' in track and track['remote']):
                 # Comet gives us all the data we need.
                 metadata = [{k: v} for k, v in track.items()]
             else:
