@@ -501,6 +501,16 @@ class SBWrapper():
         elif key == 'Stop':
             lms.stop()
 
+    def get_current_track(self):
+        try:
+            index = int(self._status['playlist_cur_index'])
+        except KeyError:
+            return
+        if index >= 0:
+            return self._status['playlist_loop'][index]
+        else:
+            return
+
 
 class MPRISInterface(dbus.service.Object):
     ''' The base object of an MPRIS player '''
@@ -580,12 +590,8 @@ class MPRISInterface(dbus.service.Object):
         return bool(int(sb_wrapper._status['playlist shuffle']))
 
     def __get_metadata():
-        try:
-            index = int(sb_wrapper._status['playlist_cur_index'])
-        except KeyError:
-            return format_metadata([], "Track")
-        if index >= 0:
-            track = sb_wrapper._status['playlist_loop'][index]
+        track = sb_wrapper.get_current_track()
+        if track:
             if 'playcount' in track or ('remote' in track and track['remote']):
                 # Comet gives us all the data we need.
                 metadata = [{k: v} for k, v in track.items()]
@@ -593,7 +599,8 @@ class MPRISInterface(dbus.service.Object):
                 # We didn't request everything we need, so get it now.
                 metadata = lms.metadata(track['id'])
             return format_metadata(metadata, "Track")
-        return
+        else:
+            return format_metadata([], "Track")
 
     def __get_volume():
         #vol = float(lms.get_volume())
@@ -620,18 +627,18 @@ class MPRISInterface(dbus.service.Object):
         return dbus.Int64(int(position * 1000000))
 
     def __can_go_next():
-        status = sb_wrapper._status  # lms.get_playing_info()
-        if 'playlist_cur_index' in status and 'playlist_tracks' in status:
-            if int(status['playlist_cur_index']) < int(status['playlist_tracks'] - 1):
-                return True
-        return False
+        track = sb_wrapper.get_current_track()
+        try:
+            return bool(track['buttons']['fwd'])
+        except (KeyError, TypeError):
+            return bool(track)
 
     def __can_go_previous():
-        if 'playlist_cur_index' in sb_wrapper._status and \
-           int(sb_wrapper._status['playlist_cur_index']) > 0:
-            return True
-        else:
-            return False
+        track = sb_wrapper.get_current_track()
+        try:
+            return bool(track['buttons']['rew'])
+        except (KeyError, TypeError):
+            return bool(track)
 
     def __can_play():
         if sb_wrapper._status['playlist_tracks'] > 0:
@@ -802,8 +809,7 @@ class MPRISInterface(dbus.service.Object):
             return
 
         position = float(position) / 1000000
-        status = sb_wrapper._status
-        track = status['playlist_loop'][int(status['playlist_cur_index'])]
+        track = sb_wrapper.get_current_track()
         if 0 <= position and position <= track['duration']:
             lms.set_position(position)
         else:
