@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Squeezebox remote control
-Comment=MPRIS 2 support for Logitech Media Server
+Comment=MPRIS 2 support for Lyrion Music Server
 Exec=slimpris2
 Icon=emblem-music
 StartupNotify=false

@@ -1,6 +1,6 @@
 # `slimpris2`
 
-`slimpris2` provides [MPRIS 2](https://specifications.freedesktop.org/mpris-spec/latest/) remote control of [Logitech Media Server](http://wiki.slimdevices.com/index.php/Logitech_Media_Server), allowing it to be controlled using the user interface integrated into your Linux desktop.
+`slimpris2` provides [MPRIS 2](https://specifications.freedesktop.org/mpris-spec/latest/) remote control of [Lyrion Music Server](https://lyrion.org/), allowing it to be controlled using the user interface integrated into your Linux desktop.
 
 `slimpris2` is run in the user session and monitors a local or distant `squeezeboxserver`.
 

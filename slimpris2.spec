@@ -1,7 +1,7 @@
 Name:                   slimpris2
 Version:                3.0.3
 Release:                0.1%{?dist}
-Summary:                MPRIS remote control of Logitech Media Server
+Summary:                MPRIS remote control of Lyrion Music Server
 
 License:                GPLv3
 URL:                    https://github.com/mavit/slimpris2/
@@ -24,7 +24,7 @@ Requires:               python3dist(simplejson)
 Requires:               python3dist(six)
 
 %description
-slimpris2 provide MPRIS 2 remote control support for Logitech Media
+slimpris2 provide MPRIS 2 remote control support for Lyrion Music
 Server, allowing it to be controlled using the user interface integrated
 into your desktop.
 

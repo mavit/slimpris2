@@ -1109,12 +1109,13 @@ class JSONConnection(LMSConnection):
 
         if self.username is not None and self.password is not None:
             auth_handler = urllib.request.HTTPBasicAuthHandler()
-            auth_handler.add_password(
-                realm='Logitech Media Server',
-                uri=("%s://%s:%s/" % (self.scheme, self.host, self.port)),
-                user=self.username,
-                passwd=self.password
-            )
+            for brand in ['Lyrion Music Server', 'Logitech Media Server']:
+                auth_handler.add_password(
+                    realm=brand,
+                    uri=("%s://%s:%s/" % (self.scheme, self.host, self.port)),
+                    user=self.username,
+                    passwd=self.password
+                )
             handlers.append(auth_handler)
 
         opener = urllib.request.build_opener(*handlers)

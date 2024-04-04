@@ -1,6 +1,6 @@
 # NAME
 
-**slimpris2** — Control Logitech Media Server via MPRIS
+**slimpris2** — Control Lyrion Music Server via MPRIS
 
 # SYNOPSIS
 
@@ -25,7 +25,7 @@
 
 # DESCRIPTION
 
-Provide a bridge between the MPRIS media player remote control protocol and Logitech Media Server, allowing it to be controlled using the user interfaces integrated into your Linux desktop.
+Provide a bridge between the MPRIS media player remote control protocol and Lyrion Music Server, allowing it to be controlled using the user interfaces integrated into your Linux desktop.
 
 `slimpris2` is run in the user session and monitors a local or distant `squeezeboxserver`.
 
@@ -35,7 +35,7 @@ Provide a bridge between the MPRIS media player remote control protocol and Logi
 - slimpris2.service(7)
 - [Source code, bug reports, etc.](https://github.com/mavit/slimpris2)
 - [Discussion on Slim Devices forum](https://forums.slimdevices.com/showthread.php?108956-MPRIS-support-via-slimpris2)
-- [Logitech Media Server](https://wiki.slimdevices.com/index.php/Logitech_Media_Server)
+- [Lyrion Music Server](https://lyrion.org/)
 - [MPRIS specification](https://specifications.freedesktop.org/mpris-spec/latest/)
 
 ---
