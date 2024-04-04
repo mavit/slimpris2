@@ -682,9 +682,11 @@ class MPRISInterface(dbus.service.Object):
 
     @staticmethod
     def __get_current_track():
-        status = sb_wrapper._status
-        track = status['playlist_loop'][int(status['playlist_cur_index'])]
-        return mpris_track_id_to_object_path(track['id'])
+        track = sb_wrapper.get_current_track()
+        if track:
+            return mpris_track_id_to_object_path(track['id'])
+        else:
+            return '/org/mpris/MediaPlayer2/TrackList/NoTrack'
 
     __tracklist_interface = f"{__root_interface}.TrackList"
     __tracklist_props = {
