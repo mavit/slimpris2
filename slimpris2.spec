@@ -1,5 +1,5 @@
 Name:                   slimpris2
-Version:                3.0.3
+Version:                3.0.4
 Release:                0.1%{?dist}
 Summary:                MPRIS remote control of Lyrion Music Server
 
