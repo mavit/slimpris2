@@ -283,6 +283,7 @@ class SBWrapper():
                 self.discover_lms()
 
             lms.detect_player()
+            lms.isplayer()
             lms.get_playing_info()
 
             # Export our DBUS service
@@ -1041,10 +1042,16 @@ class LMSConnection:
         return self.query(self.player_id, "power", off_on)
 
     def __next__(self):
-        return self.query(self.player_id, "playlist", "jump", "+1")
+        if self.isplayer:
+            return self.query(self.player_id, "button", "jump_fwd")
+        else:
+            return self.query(self.player_id, "playlist", "jump", "+1")
 
     def prev(self):
-        return self.query(self.player_id, "playlist", "jump", "-1")
+        if self.isplayer:
+            return self.query(self.player_id, "button", "jump_rew")
+        else:
+            return self.query(self.player_id, "playlist", "jump", "-1")
 
     def get_volume(self):
         # Get volume (0-100)
@@ -1128,6 +1135,11 @@ class JSONConnection(LMSConnection):
         if not hasattr(self, 'player_id'):
             lms.player_id = lms.query(None, 'player', 'id', 0, '?')['_id']
         lms.player_name = lms.query(self.player_id, 'name', '?')['_value']
+
+    def isplayer(self):
+        lms.isplayer = lms.query(
+            self.player_id, 'player', 'isplayer', '?'
+        )['_isplayer']
 
     def get_coverart_url(self, track_id, size=None):
         login = ""
