@@ -1,6 +1,6 @@
 Name:                   slimpris2
 Version:                3.0.4
-Release:                0.1%{?dist}
+Release:                %{autorelease}
 Summary:                MPRIS remote control of Lyrion Music Server
 
 License:                GPLv3
@@ -64,3 +64,4 @@ install -m 0644 -p -D %{buildroot}/%{_docdir}/%{name}/%{name}.conf \
 
 
 %changelog
+%autochangelog
