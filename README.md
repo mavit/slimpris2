@@ -24,7 +24,9 @@ make
 sudo make install
 ```
 
-Logout/login from your session.  Default prefix is `/usr/local`.
+Ensure that you have GLib, Gio, and Soup-2.4 installed.
+
+Log out and back in to your session.
 
 ## Configuration
 
