@@ -925,8 +925,7 @@ def format_metadata(data, context):
         metadata['xesam:trackNumber'] = metadata['tracknum']
 
     if 'disc' in metadata:
-        metadata['xesam:discNumber'] = int(re.match('^([0-9]+).*',
-                                                    metadata['disc']).group(1))
+        metadata['xesam:discNumber'] = metadata['disc']
 
     if 'playcount' in metadata:
         metadata['xesam:useCount'] = metadata['playcount']
