@@ -1468,9 +1468,9 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
         params['insecure_https'] = config.getboolean('Connection',
                                                      'insecure_https')
 
-    if 2 <= len(args) and len(args) <= 3 and args[1].isdigit():
+    if 2 <= len(args) and len(args) <= 3:
         params['host'] = args[0]
-        params['port'] = int(args[1])
+        params['port'] = args[1]
         if len(args) == 3:
             params['player_id'] = args[2]
     elif len(args) == 0:
@@ -1478,6 +1478,11 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
     else:
         usage(params)
         sys.exit(2)
+
+    try:
+        params['port'] = int(params['port'])
+    except ValueError:
+        params['port'] = socket.getservbyname(params['port'], 'tcp')
 
     if 'player_id' in params:
         if re.search(r'^(?:\d\d.){5}\d\d$', params['player_id']):
