@@ -1199,6 +1199,20 @@ class CometConnection(JSONConnection):
             self.session.add_feature(
                 Soup.Logger.new(Soup.LoggerLogLevel.BODY, 1024)
             )
+        if self.username is not None and self.password is not None:
+            def on_authenticate(session, msg, auth, retrying):
+                if retrying:
+                    return
+                if (
+                    msg.props.uri.scheme == self.scheme
+                    and auth.props.host == self.host
+                    and msg.props.uri.port == self.port
+                    and (auth.props.realm == 'Lyrion Music Server'
+                         or auth.props.realm == 'Logitech Media Server')
+                ):
+                    auth.authenticate(self.username, self.password)
+
+            self.session.connect('authenticate', on_authenticate)
 
         self.handshake()
 
