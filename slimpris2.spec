@@ -4,8 +4,8 @@ Release:                %{autorelease}
 Summary:                MPRIS remote control of Lyrion Music Server
 
 License:                GPLv3
-URL:                    https://github.com/mavit/slimpris2/
-Source0:                https://github.com/mavit/slimpris2/archive/master.tar.gz#slimpris2-master.tar.gz
+URL:                    https://github.com/mavit/slimpris2
+Source0:                %{url}/archive/refs/tags/%{version}.tar.gz#slimpris2-%{version}.tar.gz
 
 BuildArch:              noarch
 BuildRequires:          autoconf
