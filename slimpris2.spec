@@ -18,7 +18,7 @@ BuildRequires:          systemd
 BuildRequires:          systemd-rpm-macros
 
 Requires:               glib2
-Requires:               libsoup
+Requires:               libsoup3
 Requires:               python3dist(dbus-python)
 Requires:               python3dist(pygobject)
 Requires:               python3dist(pyxdg)

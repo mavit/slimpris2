@@ -47,7 +47,7 @@ import urllib.parse
 import urllib.request
 import xdg.BaseDirectory
 
-gi.require_version('Soup', '2.4')
+gi.require_version('Soup', '3.0')
 from gi.repository import GLib, Gio, Soup
 
 
@@ -1194,25 +1194,11 @@ class CometConnection(JSONConnection):
 
     def run(self):
         self.session = Soup.Session()
-        self.session.props.user_agent = f"{app_name}/@VERSION@ "
+        self.session.set_user_agent(f"{app_name}/@VERSION@ ")
         if logger.isEnabledFor(logging.DEBUG):
             self.session.add_feature(
-                Soup.Logger.new(Soup.LoggerLogLevel.BODY, 1024)
+                Soup.Logger.new(Soup.LoggerLogLevel.BODY)
             )
-        if self.username is not None and self.password is not None:
-            def on_authenticate(session, msg, auth, retrying):
-                if retrying:
-                    return
-                if (
-                    msg.props.uri.scheme == self.scheme
-                    and auth.props.host == self.host
-                    and msg.props.uri.port == self.port
-                    and (auth.props.realm == 'Lyrion Music Server'
-                         or auth.props.realm == 'Logitech Media Server')
-                ):
-                    auth.authenticate(self.username, self.password)
-
-            self.session.connect('authenticate', on_authenticate)
 
         self.handshake()
 
@@ -1287,30 +1273,58 @@ class CometConnection(JSONConnection):
             "POST",
             f"{self.scheme}://{self.host}:{self.port}/cometd/{inspect.currentframe().f_back.f_code.co_name}",
         )
-        message.set_request(
-            'application/json; charset=UTF-8',
-            Soup.MemoryUse.COPY,
-            json.dumps(requests).encode()
-        )
+
+        def on_starting(message):
+            message.set_request_body_from_bytes(
+                'application/json; charset=UTF-8',
+                GLib.Bytes.new(json.dumps(requests).encode())
+            )
+        message.connect('starting', on_starting)
+
+        if self.username is not None and self.password is not None:
+            def on_authenticate(message, auth, retrying):
+                if retrying:
+                    return False
+                if (
+                    auth.get_authority() == f"{self.host}:{self.port}"
+                    and (auth.get_realm()
+                         in ['Lyrion Music Server', 'Logitech Media Server'])
+                ):
+                    auth.authenticate(self.username, self.password)
+                    message.set_request_body_from_bytes(
+                        'application/json; charset=UTF-8',
+                        GLib.Bytes.new(json.dumps(requests).encode())
+                    )
+            message.connect('authenticate', on_authenticate)
+
         self.session.send_async(
-            message, None, self.receive_comet_responses, message
+            message,
+            GLib.PRIORITY_DEFAULT,
+            None,
+            self.receive_comet_responses,
+            message
         )
 
     def retry(self, message):
         if not self.disconnecting:
             self.session.send_async(
-                message, None, self.receive_comet_responses, message
+                message,
+                GLib.PRIORITY_DEFAULT,
+                None,
+                self.receive_comet_responses,
+                message
             )
+
         return False
 
     def receive_comet_responses(self, session, result, message):
         try:
             input_stream = session.send_finish(result)
-            status_code = message.status_code
+            status_code = message.get_status()
             if not (200 <= status_code and status_code < 300):
                 raise HttpNonSuccessException(
-                    message.status_code,
-                    message.reason_phrase,
+                    status_code,
+                    message.get_reason_phrase(),
                 )
         except (GLib.Error, HttpNonSuccessException) as e:
             if isinstance(e, GLib.Error) \
@@ -1322,7 +1336,9 @@ class CometConnection(JSONConnection):
                 retry_period = self.retry_period
                 if self.retry_period < 60:
                     self.retry_period = self.retry_period * 2
-                logger.error(f"{message.get_uri().to_string(False)}: {e.code} {e.message}")
+                logger.error(
+                    f"{message.get_uri().to_string()}: {e.code} {e.message}"
+                )
                 logger.info(f"Will retry in {retry_period} seconds")
             GLib.timeout_add_seconds(retry_period, self.retry, message)
             return
