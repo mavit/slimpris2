@@ -10,6 +10,7 @@ Source0:                https://github.com/mavit/slimpris2/archive/master.tar.gz
 BuildArch:              noarch
 BuildRequires:          autoconf
 BuildRequires:          automake
+BuildRequires:          desktop-file-utils
 BuildRequires:          intltool
 BuildRequires:          make
 BuildRequires:          pandoc
@@ -46,6 +47,10 @@ into your desktop.
 rm %{buildroot}/%{_docdir}/%{name}/COPYING
 install -m 0644 -p -D %{buildroot}/%{_docdir}/%{name}/%{name}.conf \
                       %{buildroot}/%{_sysconfdir}/%{name}.conf
+
+
+%check
+make test
 
 
 %files
