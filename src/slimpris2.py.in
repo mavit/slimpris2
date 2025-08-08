@@ -1388,14 +1388,14 @@ class LMSDiscoveryError(Exception):
         self.message = message
 
 
-def usage(params):
+def usage():
     print("""\
 Usage: %(progname)s [OPTION]... [LMS_HOST LMS_PORT [PLAYER]]
 
      -d, --debug            Run in debug mode
-
-Default: LMS_HOST: %(host)s
-         LMS_PORT: %(port)s""" % params)
+     -V, --version          Display version and exit
+     -?, --help             Display this message
+""")
 
 if __name__ == '__main__':
     DBusGMainLoop(set_as_default=True)
@@ -1416,7 +1416,7 @@ if __name__ == '__main__':
         (msg, opt) = e
         print(sys.argv[0] + ': ' + msg)
         print()
-        usage(params)
+        usage()
         sys.exit(2)
 
     log_format = '%(asctime)s %(module)s %(levelname)s: %(message)s'
@@ -1426,7 +1426,7 @@ if __name__ == '__main__':
         if opt in ['-d', '--debug']:
             log_level = logging.DEBUG
         elif opt in ['-?', '--help']:
-            usage(params)
+            usage()
             sys.exit()
         elif opt in ['-V', '--version']:
             print("""slimpris2 @VERSION@
@@ -1476,7 +1476,7 @@ Report bugs to https://github.com/mavit/slimpris2/issues""")
     elif len(args) == 0:
         pass
     else:
-        usage(params)
+        usage()
         sys.exit(2)
 
     try:
