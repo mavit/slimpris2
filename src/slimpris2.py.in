@@ -268,8 +268,8 @@ class SBWrapper():
                 gsd_object.connect_to_signal(
                     'MediaPlayerKeyPressed', self.on_mediakey)
             except:
-                logger.warn('Failed to connect to GNOME Settings Daemon.'
-                            ' Disabling multimedia key support')
+                logger.warning('Failed to connect to GNOME Settings Daemon.'
+                               ' Disabling multimedia key support')
                 params['mmkeys'] = False
 
     def run(self):
