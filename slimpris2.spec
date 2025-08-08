@@ -53,6 +53,20 @@ install -m 0644 -p -D %{buildroot}/%{_docdir}/%{name}/%{name}.conf \
 make test
 
 
+%post
+%systemd_user_post %{name}.service
+
+
+%preun
+%systemd_user_preun %{name}.service
+
+
+%postun
+%systemd_user_postun_with_restart %{name}.service
+%systemd_user_postun_with_reload %{name}.service
+%systemd_user_postun %{name}.service
+
+
 %files
 %config(noreplace) %{_sysconfdir}/%{name}.conf
 %doc %{_mandir}/*/*
