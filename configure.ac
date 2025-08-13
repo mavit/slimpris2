@@ -1,4 +1,4 @@
-AC_INIT(slimpris2, 3.2.1)
+AC_INIT([slimpris2],[3.2.1])
 AM_INIT_AUTOMAKE()
 AM_PATH_PYTHON([3.6])
 GETTEXT_PACKAGE=slimpris2
@@ -19,12 +19,18 @@ AC_SUBST([systemduserunitdir], [$with_systemduserunitdir])
 AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemduserpresetdir"])
 AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemduserunitdir"])
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
 Makefile
 doc/Makefile
 src/Makefile
+src/icons/Makefile
+src/icons/22x22/Makefile
+src/icons/512x512/Makefile
+src/icons/scalable/Makefile
+src/icons/symbolic/Makefile
 po/Makefile.in
 ])
+AC_OUTPUT
 
 dnl Warn user sysconfdir is not /etc, if necessary.
 make sysconfdirwarning

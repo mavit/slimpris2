@@ -19,6 +19,7 @@ BuildRequires:          systemd
 BuildRequires:          systemd-rpm-macros
 
 Requires:               glib2
+Requires:               hicolor-icon-theme
 Requires:               libsoup3
 Requires:               python3dist(dbus-python)
 Requires:               python3dist(pygobject)
@@ -78,9 +79,12 @@ make test
 %{_datadir}/applications/io.github.mavit.slimpris2.desktop
 %{_datadir}/dbus-1/services/org.mpris.MediaPlayer2.slimpris2.service
 %{_datadir}/locale/*/LC_MESSAGES/%{name}.mo
+%{_iconsdir}/hicolor/22x22/apps/io.github.mavit.slimpris2.png
+%{_iconsdir}/hicolor/512x512/apps/io.github.mavit.slimpris2.png
+%{_iconsdir}/hicolor/scalable/apps/io.github.mavit.slimpris2.svg
+%{_iconsdir}/hicolor/symbolic/apps/io.github.mavit.slimpris2-symbolic.svg
 %{_userpresetdir}/80-%{name}.preset
 %{_userunitdir}/%{name}.service
-
 
 %changelog
 %autochangelog

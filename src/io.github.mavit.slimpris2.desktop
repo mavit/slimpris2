@@ -2,7 +2,7 @@
 Name=Squeezebox remote control
 Comment=MPRIS 2 support for Lyrion Music Server
 Exec=slimpris2
-Icon=emblem-music
+Icon=io.github.mavit.slimpris2
 StartupNotify=false
 Type=Application
 Categories=AudioVideo;Audio;Music;Player

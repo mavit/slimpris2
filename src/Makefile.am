@@ -1,5 +1,8 @@
+SUBDIRS = icons
+
 desktopdir = ${datadir}/applications/
 dbusdir = ${datadir}/dbus-1/services/
+icondir = ${datadir}/icons/hicolor/
 
 dist_bin_SCRIPTS = slimpris2
 dist_desktop_DATA = io.github.mavit.slimpris2.desktop
