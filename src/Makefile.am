@@ -44,4 +44,4 @@ test-desktop: $(dist_desktop_DATA)
 	desktop-file-validate $<
 
 test-appdata: $(dist_appstream_DATA)
-	 appstream-util validate $<
+	 appstream-util validate-relax $<

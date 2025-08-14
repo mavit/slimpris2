@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<component type="service">
+<component>
   <id>io.github.mavit.slimpris2</id>
 
   <name>slimpris2</name>
@@ -25,7 +25,7 @@
   <screenshots>
     <screenshot type="default" environment="gnome">
       <caption>slimpris2 with the GNOME desktop</caption>
-      <image type="source" width="652" height="351">
+      <image type="source" width="624" height="351">
         https://github.com/mavit/slimpris2/raw/refs/heads/release/doc/screenshot-gnome-48.png
       </image>
     </screenshot>
