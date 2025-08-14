@@ -1,5 +1,5 @@
 Name:                   slimpris2
-Version:                3.3.0
+Version:                3.3.1
 Release:                %{autorelease}
 Summary:                MPRIS remote control of Lyrion Music Server
 
@@ -87,6 +87,7 @@ make test
 %{_metainfodir}/io.github.mavit.slimpris2.metainfo.xml
 %{_userpresetdir}/80-%{name}.preset
 %{_userunitdir}/%{name}.service
+
 
 %changelog
 %autochangelog
