@@ -2,6 +2,8 @@
 
 `slimpris2` provides [MPRIS 2](https://specifications.freedesktop.org/mpris-spec/latest/) remote control of [Lyrion Music Server](https://lyrion.org/), allowing it to be controlled using the user interface integrated into your Linux desktop.
 
+![Example of `slimpris2` with the GNOME desktop](doc/screenshot-gnome-48.png)
+
 `slimpris2` is run in the user session and monitors a local or distant `squeezeboxserver`.
 
 ## Installation
@@ -39,6 +41,6 @@ Restart your session or `slimpris2` after changing `slimpris2.conf`.
 ## Some examples of compatible remote controls
 
 - [BlueZ](http://www.bluez.org/) `mpris-proxy` for Bluetooth [AVRCP](https://en.wikipedia.org/wiki/List_of_Bluetooth_profiles#Audio/Video_Remote_Control_Profile_(AVRCP)) remote controls.
-- Gnome Shell [time and date drop-down](https://wiki.gnome.org/Projects/GnomeShell/CheatSheet#The_top_bar).
+- GNOME Shell [time and date drop-down](https://wiki.gnome.org/Projects/GnomeShell/CheatSheet#The_top_bar).
 - [GSConnect](https://github.com/GSConnect/gnome-shell-extension-gsconnect/wiki) for Android phones.
 - [`playerctl`](https://github.com/altdesktop/playerctl) from the command line.

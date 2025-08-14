@@ -1,9 +1,11 @@
 SUBDIRS = icons
 
+appstreamdir = ${datadir}/metainfo/
 desktopdir = ${datadir}/applications/
 dbusdir = ${datadir}/dbus-1/services/
 icondir = ${datadir}/icons/hicolor/
 
+dist_appstream_DATA = io.github.mavit.slimpris2.metainfo.xml
 dist_bin_SCRIPTS = slimpris2
 dist_desktop_DATA = io.github.mavit.slimpris2.desktop
 dist_doc_DATA = slimpris2.conf
@@ -36,7 +38,10 @@ slimpris2: slimpris2.py.in Makefile
 	chmod a-w $@.tmp
 	mv $@.tmp $@
 
-test: test-desktop
+test: test-appdata test-desktop
 
-test-desktop: io.github.mavit.slimpris2.desktop
+test-desktop: $(dist_desktop_DATA)
 	desktop-file-validate $<
+
+test-appdata: $(dist_appstream_DATA)
+	 appstream-util validate $<

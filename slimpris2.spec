@@ -12,6 +12,7 @@ BuildRequires:          autoconf
 BuildRequires:          automake
 BuildRequires:          desktop-file-utils
 BuildRequires:          intltool
+BuildRequires:          libappstream-glib
 BuildRequires:          make
 BuildRequires:          pandoc
 BuildRequires:          python3-devel
@@ -83,6 +84,7 @@ make test
 %{_iconsdir}/hicolor/512x512/apps/io.github.mavit.slimpris2.png
 %{_iconsdir}/hicolor/scalable/apps/io.github.mavit.slimpris2.svg
 %{_iconsdir}/hicolor/symbolic/apps/io.github.mavit.slimpris2-symbolic.svg
+%{_metainfodir}/io.github.mavit.slimpris2.metainfo.xml
 %{_userpresetdir}/80-%{name}.preset
 %{_userunitdir}/%{name}.service
 
