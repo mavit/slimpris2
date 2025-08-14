@@ -24,7 +24,7 @@ make
 sudo make install
 ```
 
-Ensure that you have GLib, Gio, and Soup-2.4 installed.
+Ensure that you have GLib, Gio, and Soup-3.0 installed.
 
 Log out and back in to your session.
 
