@@ -11,6 +11,7 @@ BuildArch:              noarch
 BuildRequires:          autoconf
 BuildRequires:          automake
 BuildRequires:          desktop-file-utils
+BuildRequires:          gettext
 BuildRequires:          intltool
 BuildRequires:          libappstream-glib
 BuildRequires:          make
@@ -49,6 +50,7 @@ into your desktop.
 rm %{buildroot}/%{_docdir}/%{name}/COPYING
 install -m 0644 -p -D %{buildroot}/%{_docdir}/%{name}/%{name}.conf \
                       %{buildroot}/%{_sysconfdir}/%{name}.conf
+%find_lang %{name}
 
 
 %check
@@ -69,7 +71,7 @@ make test
 %systemd_user_postun %{name}.service
 
 
-%files
+%files -f %{name}.lang
 %config(noreplace) %{_sysconfdir}/%{name}.conf
 %doc %{_mandir}/*/*
 %doc AUTHORS
@@ -79,7 +81,6 @@ make test
 %{_bindir}/%{name}
 %{_datadir}/applications/io.github.mavit.slimpris2.desktop
 %{_datadir}/dbus-1/services/org.mpris.MediaPlayer2.slimpris2.service
-%{_datadir}/locale/*/LC_MESSAGES/%{name}.mo
 %{_iconsdir}/hicolor/22x22/apps/io.github.mavit.slimpris2.png
 %{_iconsdir}/hicolor/512x512/apps/io.github.mavit.slimpris2.png
 %{_iconsdir}/hicolor/scalable/apps/io.github.mavit.slimpris2.svg
