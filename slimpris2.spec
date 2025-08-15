@@ -1,11 +1,16 @@
 Name:                   slimpris2
-Version:                3.3.2
+
+%global tag             3.3.2
+%global forgeurl        https://github.com/mavit/%{name}
+%forgemeta
+
+Version:                %{tag}
 Release:                %{autorelease}
 Summary:                MPRIS remote control of Lyrion Music Server
 
 License:                GPL-3.0-only
-URL:                    https://github.com/mavit/slimpris2
-Source0:                %{url}/archive/refs/tags/%{version}.tar.gz#slimpris2-%{version}.tar.gz
+URL:                    %{forgeurl}
+Source0:                %{forgesource}
 
 BuildArch:              noarch
 BuildRequires:          autoconf
@@ -36,7 +41,7 @@ into your desktop.
 
 
 %prep
-%autosetup
+%forgesetup
 
 
 %build
