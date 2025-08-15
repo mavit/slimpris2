@@ -1,6 +1,6 @@
 Name:                   slimpris2
 
-%global tag             3.3.2
+%global tag             4.0.0
 %global forgeurl        https://github.com/mavit/%{name}
 %forgemeta
 
