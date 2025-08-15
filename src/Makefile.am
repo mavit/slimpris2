@@ -13,7 +13,6 @@ nodist_dbus_DATA = org.mpris.MediaPlayer2.slimpris2.service
 
 if HAVE_SYSTEMD
 nodist_systemduserunit_DATA = slimpris2.service
-systemduserpreset_DATA = 80-slimpris2.preset
 endif
 
 EXTRA_DIST = org.mpris.MediaPlayer2.slimpris2.service.in slimpris2.service.in slimpris2.in

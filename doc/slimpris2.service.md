@@ -4,7 +4,11 @@
 
 # DESCRIPTION
 
-Automatically start the MPRIS to LMS bridge when a user logs in.
+Start the MPRIS to LMS bridge when a user logs in.
+
+# SYNOPSIS
+
+**systemctl** **--user** enable **--now** slimpris2
 
 # SEE ALSO
 
@@ -18,6 +22,6 @@ title: slimpris2.service
 section: 7
 header: slimpris2
 footer: slimpris2 @VERSION@
-date: April 2021
+date: August 2025
 author: Peter Oliver <git@mavit.org.uk>
 ...

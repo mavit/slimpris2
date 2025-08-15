@@ -85,7 +85,6 @@ make test
 %{_iconsdir}/hicolor/scalable/apps/io.github.mavit.slimpris2.svg
 %{_iconsdir}/hicolor/symbolic/apps/io.github.mavit.slimpris2-symbolic.svg
 %{_metainfodir}/io.github.mavit.slimpris2.metainfo.xml
-%{_userpresetdir}/80-%{name}.preset
 %{_userunitdir}/%{name}.service
 
 

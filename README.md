@@ -28,7 +28,14 @@ sudo make install
 
 Ensure that you have GLib, Gio, and Soup-3.0 installed.
 
-Log out and back in to your session.
+## Set-up
+
+Enable and start the service with:
+
+```sh
+systemctl --user enable --now slimpris2
+
+```
 
 ## Configuration
 
