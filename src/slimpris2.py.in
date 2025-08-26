@@ -1419,8 +1419,8 @@ class LMSDiscoveryError(Exception):
 
 
 def usage():
-    print("""\
-Usage: %(progname)s [OPTION]... [LMS_HOST LMS_PORT [PLAYER]]
+    print(f"""\
+Usage: {params['progname']} [OPTION]... [LMS_HOST LMS_PORT [PLAYER]]
 
      -d, --debug            Run in debug mode
      -V, --version          Display version and exit
