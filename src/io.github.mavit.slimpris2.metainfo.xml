@@ -19,7 +19,7 @@
   <url type="contact">https://forums.lyrion.org/forum/user-forums/3rd-party-software/105606-mpris-support-via-slimpris2</url>
   <url type="vcs-browser">https://github.com/mavit/slimpris2</url>
 
-  <launchable type="desktop-id">io.github.mavit.slimpris2.desktop></launchable>
+  <launchable type="desktop-id">io.github.mavit.slimpris2.desktop</launchable>
   <launchable type="service">slimpris2.service</launchable>
 
   <screenshots>
