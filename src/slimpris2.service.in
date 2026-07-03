@@ -1,6 +1,7 @@
 [Unit]
 Description=Squeezebox MPRIS remote control
 Documentation=man:slimpris2.service(7)
+PartOf=graphical-session.target
 
 [Service]
 Type=dbus
@@ -10,4 +11,4 @@ Restart=on-failure
 ProtectSystem=full
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical-session.target
