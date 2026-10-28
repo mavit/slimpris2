@@ -1188,7 +1188,7 @@ class CometConnection(JSONConnection):
 
         self.disconnecting = False
         self.comet_id = 0
-        self.retry_period = 1
+        self.reset_retry_period()
 
     def run(self):
         self.session = Soup.Session()
@@ -1303,6 +1303,13 @@ class CometConnection(JSONConnection):
             message
         )
 
+    def increment_retry_period(self):
+        if self.retry_period < 60:
+            self.retry_period = self.retry_period * 2
+
+    def reset_retry_period(self):
+        self.retry_period = 1
+
     def retry(self, message):
         if not self.disconnecting:
             self.session.send_async(
@@ -1330,18 +1337,16 @@ class CometConnection(JSONConnection):
                 # We expect long polling to time out eventually, so
                 # retry immediately:
                 retry_period = 0
+                logger.debug("Will re-poll immediately, due to comet time-out")
             else:
                 retry_period = self.retry_period
-                if self.retry_period < 60:
-                    self.retry_period = self.retry_period * 2
+                self.increment_retry_period()
                 logger.error(
                     f"{message.get_uri().to_string()}: {e.code} {e.message}"
                 )
                 logger.info(f"Will retry in {retry_period} seconds")
             GLib.timeout_add_seconds(retry_period, self.retry, message)
             return
-
-        self.retry_period = 1
 
         # I couldn't get Gio.InputStream.read_all() to work :-(
         content, length = Gio.DataInputStream.new(input_stream) \
@@ -1350,6 +1355,7 @@ class CometConnection(JSONConnection):
             logger.debug(f"Received comet response: {msg}")
             if msg['channel'] == '/meta/handshake':
                 if msg['successful']:
+                    self.reset_retry_period()
                     self.comet_client_id = msg['clientId']
                     GLib.timeout_add(0, self.meta_subscribe)
                     GLib.timeout_add(0, self.connect)
@@ -1358,14 +1364,26 @@ class CometConnection(JSONConnection):
                     raise CometError(msg)
             elif msg['channel'] == '/meta/subscribe':
                 if msg['successful']:
+                    self.reset_retry_period()
                     GLib.timeout_add(0, self.slim_subscribe)
                 else:
                     logger.critical(f"Subscription failed: {msg}")
                     raise CometError(msg)
             elif msg['channel'] == '/slim/subscribe':
                 if not msg['successful']:
-                    logger.critical(f"Subscription failed: {msg}")
-                    raise CometError(msg)
+                    logger.error(f"Subscription failed: {msg}")
+                if 'advice' in msg and 'reconnect' in msg['advice']:
+                    if msg['advice']['reconnect'] == 'none':
+                        logger.critical("The server advises us not to reconnect.")
+                        raise CometError(msg)
+                    elif msg['advice']['reconnect'] == 'retry':
+                        logger.debug(f"Will retry in {self.retry_period} seconds")
+                        GLib.timeout_add_seconds(
+                            self.retry_period,
+                            self.slim_subscribe,
+                        )
+                        self.increment_retry_period()
+                        continue
             elif msg['channel'] == '/meta/connect':
                 if not msg['successful']:
                     logger.warning(f"Connection failed: {msg}")
@@ -1374,12 +1392,14 @@ class CometConnection(JSONConnection):
                         logger.critical("The server advises us not to reconnect.")
                         raise CometError(msg)
                     elif msg['advice']['reconnect'] == 'handshake':
+                        logger.debug(f"Will restart from handshake after {msg['advice']['interval']} ms")
                         GLib.timeout_add_seconds(
                             math.ceil(int(msg['advice']['interval'])/1000),
                             self.handshake,
                         )
                         continue
-                if not self.disconnecting:
+                elif not self.disconnecting:
+                    logger.debug(f"Will re-poll after {msg['advice']['interval']} ms, due to comet response")
                     GLib.timeout_add_seconds(
                         math.ceil(int(msg['advice']['interval'])/1000),
                         self.connect,
@@ -1388,6 +1408,7 @@ class CometConnection(JSONConnection):
                     f"^/{re.escape(self.comet_client_id)}/slim/status/{re.escape(self.player_id)}$",
                     msg['channel']
             ):
+                self.reset_retry_period()
                 info = msg['data']
                 info['last_fetch'] = time.monotonic()
                 sb_wrapper.monitor(info)
