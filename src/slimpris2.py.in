@@ -30,7 +30,6 @@ import inspect
 import json
 import logging
 import math
-import os
 import re
 import signal
 import simplejson
@@ -354,7 +353,6 @@ class SBWrapper():
             msg = msg[length2 + 5:]
             length = length - length2 - 5
 
-
     def reconnect(self):
         logger.warning("Disconnected")
         # Release the Dbus name
@@ -387,7 +385,7 @@ class SBWrapper():
 
         self._status = status or lms.get_playing_info()
 
-        if type(self._status) == type(dict()):
+        if isinstance(self._status, dict):
 
             if 'time' in self._status:
                 self._position = float(self._status['time'])
@@ -405,7 +403,7 @@ class SBWrapper():
                     or (old_status['playlist_loop'][int(old_status['playlist_cur_index'])]['title'] != self._status['playlist_loop'][int(self._status['playlist_cur_index'])]['title'])
                  )
             ):
-                metadata = self._dbus_service.update_property(
+                self._dbus_service.update_property(
                     'org.mpris.MediaPlayer2.Player',
                     'Metadata'
                 )
@@ -415,7 +413,7 @@ class SBWrapper():
                 )
             elif 'playlist_loop' in old_status \
                  and 'playlist_loop' not in self._status:
-                metadata = self._dbus_service.update_property(
+                self._dbus_service.update_property(
                     'org.mpris.MediaPlayer2.Player',
                     'Metadata'
                 )
@@ -1248,7 +1246,7 @@ class CometConnection(JSONConnection):
 
     def connect(self):
         self.send_comet_requests([{
-            'channel': f'/meta/connect',
+            'channel': '/meta/connect',
             'clientId': self.comet_client_id,
             'connectionType': 'long-polling',
             'id': self.get_comet_id(),
@@ -1258,7 +1256,7 @@ class CometConnection(JSONConnection):
     def disconnect(self):
         if hasattr(self, 'comet_client_id'):
             self.send_comet_requests([{
-                'channel': f'/meta/disconnect',
+                'channel': '/meta/disconnect',
                 'clientId': self.comet_client_id,
                 'id': self.get_comet_id(),
             }])
@@ -1373,7 +1371,7 @@ class CometConnection(JSONConnection):
                     logger.warning(f"Connection failed: {msg}")
                 if 'reconnect' in msg['advice']:
                     if msg['advice']['reconnect'] == 'none':
-                        logger.critical(f"The server advises us not to reconnect.")
+                        logger.critical("The server advises us not to reconnect.")
                         raise CometError(msg)
                     elif msg['advice']['reconnect'] == 'handshake':
                         GLib.timeout_add_seconds(
@@ -1426,6 +1424,7 @@ Usage: {params['progname']} [OPTION]... [LMS_HOST LMS_PORT [PLAYER]]
      -V, --version          Display version and exit
      -?, --help             Display this message
 """)
+
 
 if __name__ == '__main__':
     DBusGMainLoop(set_as_default=True)
