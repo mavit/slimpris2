@@ -344,19 +344,6 @@ class SBWrapper():
             msg = msg[length2 + 5:]
             length = length - length2 - 5
 
-    def reconnect(self):
-        logger.warning("Disconnected")
-        # Release the Dbus name
-        self._dbus_service.release_name()
-        # Disconnect service from the session bus
-        self._dbus_service.remove_from_connection()
-        # Stop monitoring
-        GLib.source_remove(self._monitor)
-        # Clean mpd client state
-        # self.disconnect()
-        # Try to reconnect
-        self.run()
-
     def init_state(self):
         # Get current state
         self._status = lms.get_playing_info()
