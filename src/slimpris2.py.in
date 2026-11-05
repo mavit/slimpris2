@@ -38,6 +38,7 @@ import six.moves.configparser
 import six.moves.http_client
 import socket
 import ssl
+import string
 import struct
 import sys
 import time
@@ -348,7 +349,7 @@ class SBWrapper():
         # Get current state
         self._status = lms.get_playing_info()
         # Invalid some fields to throw events at start
-        self._status['mode'] = 'invalid'
+        self._status['mode'] = None
         if 'playlist_loop' in self._status:
             self._status['playlist_loop'][
                 int(self._status['playlist_cur_index'])
@@ -363,8 +364,7 @@ class SBWrapper():
 
         self._status = status or lms.get_playing_info()
 
-        if isinstance(self._status, dict):
-
+        try:
             if 'time' in self._status:
                 self._position = float(self._status['time'])
             else:
@@ -410,24 +410,33 @@ class SBWrapper():
                     if abs(actual_delta - expected_delta) > self.seek_tolerance:
                         self._dbus_service.Seeked(self._position * 1000000)
 
-            if old_status['mixer volume'] != self._status['mixer volume']:
+            if (
+                old_status.get('mixer volume', None)
+                != self._status.get('mixer volume')
+            ):
                 self._dbus_service.update_property(
                     'org.mpris.MediaPlayer2.Player', 'Volume')
 
-            if old_status['power'] != self._status['power']:
+            if old_status.get('power', None) != self._status.get('power'):
                 self._dbus_service.update_property(
                     'org.mpris.MediaPlayer2', 'CanQuit'
                 )
 
-            if old_status['mode'] != self._status['mode']:
+            if old_status.get('mode', None) != self._status.get('mode'):
                 self._dbus_service.update_property(
                     'org.mpris.MediaPlayer2.Player', 'PlaybackStatus')
 
-            if old_status['playlist shuffle'] != self._status['playlist shuffle']:
+            if (
+                old_status.get('playlist shuffle', None)
+                != self._status.get('playlist shuffle')
+            ):
                 self._dbus_service.update_property(
                     'org.mpris.MediaPlayer2.Player', 'Shuffle')
 
-            if old_status['playlist repeat'] != self._status['playlist repeat']:
+            if (
+                old_status.get('playlist repeat', None)
+                != self._status.get('playlist repeat')
+            ):
                 self._dbus_service.update_property(
                     'org.mpris.MediaPlayer2.Player', 'LoopStatus')
 
@@ -454,6 +463,30 @@ class SBWrapper():
                 and 'playlist_cur_index' in self._status
             ):
                 for prop in ['CanGoNext', 'CanGoPrevious']:
+                    self._dbus_service.update_property(
+                        'org.mpris.MediaPlayer2.Player',
+                        prop
+                    )
+
+        except KeyError as e:
+            logger.warning(repr(e))
+            if 'error' in self._status:
+                logger.error(self._status['error'])
+                self._dbus_service.update_property(
+                    'org.mpris.MediaPlayer2',
+                    'CanQuit',
+                )
+                for prop in [
+                        # # Updating CanPlay here would hide the player from
+                        # # the Gnome date menu.
+                        # 'CanPlay',
+
+                        'CanGoNext',
+                        'CanGoPrevious',
+                        'CanSeek',
+                        'Metadata',
+                        'PlaybackStatus',
+                ]:
                     self._dbus_service.update_property(
                         'org.mpris.MediaPlayer2.Player',
                         prop
@@ -510,7 +543,10 @@ class MPRISInterface(dbus.service.Object):
         del self._bus_name
 
     def __can_quit():
-        return bool(int(sb_wrapper._status['power']))
+        try:
+            return bool(int(sb_wrapper._status['power']))
+        except KeyError:
+            return False
 
     def __get_identity():
         return lms.player_name
@@ -528,12 +564,15 @@ class MPRISInterface(dbus.service.Object):
     }
 
     def __get_playback_status():
-        status = sb_wrapper._status
-        return {
-            'play': 'Playing',
-            'pause': 'Paused',
-            'stop': 'Stopped',
-        }[status['mode']]
+        try:
+            status = sb_wrapper._status
+            return {
+                'play': 'Playing',
+                'pause': 'Paused',
+                'stop': 'Stopped',
+            }[status['mode']]
+        except KeyError:
+            return 'Stopped'
 
     def __set_loop_status(value):
         if str(value) == "Playlist":
@@ -566,6 +605,13 @@ class MPRISInterface(dbus.service.Object):
         return bool(int(sb_wrapper._status['playlist shuffle']))
 
     def __get_metadata():
+        if 'error' in sb_wrapper._status:
+            return format_metadata([{
+                'id': 'error',
+                'artist': 'Error',
+                'title': string.capitalize(sb_wrapper._status['error']),
+            }], "Track")
+
         track = sb_wrapper.get_current_track()
         if track:
             if 'playcount' in track or ('remote' in track and track['remote']):
@@ -617,9 +663,12 @@ class MPRISInterface(dbus.service.Object):
             return bool(track)
 
     def __can_play():
-        if sb_wrapper._status['playlist_tracks'] > 0:
-            return True
-        else:
+        try:
+            if sb_wrapper._status['playlist_tracks'] > 0:
+                return True
+            else:
+                return False
+        except KeyError:
             return False
 
     def __can_seek():
@@ -979,7 +1028,7 @@ class LMSConnection:
         #{'signalstrength': 0, 'mixer volume': 100, 'player_name': 'Studeerkamer', 'playlist mode': 'off', 'power': 1, 'playlist repeat': 0, 'player_ip': '192.168.1.58:49078', 'playlist_timestamp': 1338368677.0128, 'playlist_cur_index': '0', 'playlist shuffle': 0, 'rate': 1, 'seq_no': 0, 'mode': 'play', 'time': 161.490672870636, 'duration': 314.232, 'can_seek': 1, 'playlist_tracks': 12, 'player_connected': 1}
         info = self.query(self.player_id, "status", "0", None, "tags:")
         info['last_fetch'] = time.monotonic()
-        return info or {"mode": "invalid"}
+        return info or {"mode": None}
 
     def metadata(self, track_id):
         #path = self.get_track_path()
